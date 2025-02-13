@@ -70,7 +70,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>billing-proxy</finalName>
+		<finalName>payment-scheduler</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
