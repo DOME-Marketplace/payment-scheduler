@@ -1,0 +1,54 @@
+
+# Spring Configuration
+server: 
+  port: 8480
+  servlet:
+    context-path:  ${BILLING_PREFIX:/}
+
+application:
+  name: "@project.artifactId@"
+
+build: 
+  version: "@project.version@"
+  timestamp: "@timestamp@"
+  
+
+# Logging Configuration
+logging:
+  level:
+    it.eng.dome: ${LOG_LEVEL:DEBUG}
+    org.apache.coyote.http11: ERROR
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n" 
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Spring Boot Actuator
+management:
+  server:
+    port: 9004
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: "*"
+      base-path: /
+      path-mapping:
+        health: health
+  endpoint:
+    health:
+      enabled: true
+      show-details: never
+  health:
+    probes:
+      enabled: true	
+
+tmforumapi:
+  tmf_endpoint: ${TMF_ENDPOINT:https://dome-dev.eng.it}
+   
+  tmf_envoy:  ${TMF_ENVOY:true}
+  # valid only if envoy false
+  tmf_namespace:  ${TMF_NAMESPACE:marketplace}
+  tmf_postfix:  ${TMF_POSTFIX:svc.cluster.local}
+  tmf_port:  ${TMF_PORT:8080}
+    
+  tmf678_billing_path: tmf-api/customerBillManagement/v4
