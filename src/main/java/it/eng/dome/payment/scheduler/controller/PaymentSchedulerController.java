@@ -1,7 +1,10 @@
 package it.eng.dome.payment.scheduler.controller;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.eng.dome.payment.scheduler.dto.StartRequestDTO;
 import it.eng.dome.payment.scheduler.service.PaymentService;
 import it.eng.dome.tmforum.tmf678.v4.JSON;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
@@ -50,6 +54,28 @@ public class PaymentSchedulerController {
 		logger.info("Number of AppliedCustomerBillingRate saved: {}",ids.size());
 		logger.debug("AppliedCustomerBillingRate ids saved: {}", ids);
 		return "Hello";
+	}
+	
+	@RequestMapping(value = "/start", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+	public Map<String, String> startScheduler(@RequestBody StartRequestDTO datetime) throws Throwable {
+
+		Map<String, String> response = new HashMap<String, String>();
+		OffsetDateTime now = OffsetDateTime.now();
+		try {
+			String dt = datetime.getDatetime().toString();
+			logger.debug("Set datetime manually at {}", dt);
+			now = OffsetDateTime.parse(dt);
+		} catch (Exception e) {
+			logger.warn("Cannot recognize the datetime attribute! Please use the YYYY-MM-DDTHH:mm:ss format");
+			response.put("msg", "Cannot recognize the datetime attribute! Please use the YYYY-MM-DDTHH:mm:ss format");
+			response.put("err", e.getMessage());
+		}
+
+		logger.info("Start the scheduler task via REST APIs for payments");
+
+		response.put("response", "Starting the payments from datetime: " + now);
+		paymentService.payments(now);
+		return response;
 	}
 	
 	

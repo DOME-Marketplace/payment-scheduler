@@ -11,7 +11,10 @@ application:
 build: 
   version: "@project.version@"
   timestamp: "@timestamp@"
-  
+
+# Scheduling Task Configuration  
+scheduling:
+  cron: "0 0 6,18 * * ?" 
 
 # Logging Configuration
 logging:

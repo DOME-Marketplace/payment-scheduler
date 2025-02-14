@@ -1,5 +1,7 @@
 package it.eng.dome.payment.scheduler.service;
 
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,6 +14,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
+import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
@@ -21,6 +24,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateCreate;
 public class PaymentService implements InitializingBean {
 
 	private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
+	private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy");
 
 	@Autowired
 	private TmfApiFactory tmfApiFactory;
@@ -50,5 +54,21 @@ public class PaymentService implements InitializingBean {
 		}
 
 		return ids;
+	}
+	
+	public void payments(OffsetDateTime now) {
+		logger.info("Starting payments at {}", now.format(formatter));
+		
+		//TODO GET AppliedCustomerBillingRate
+		try {
+			List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
+			logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
+			for (AppliedCustomerBillingRate appliedCustomerBillingRate : appliedList) {
+				logger.debug("appliedCustomerBillingRateId: {}", appliedCustomerBillingRate.getId());
+			}
+		} catch (ApiException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 }
