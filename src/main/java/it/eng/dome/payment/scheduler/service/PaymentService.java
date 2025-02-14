@@ -36,7 +36,7 @@ public class PaymentService implements InitializingBean {
 		appliedCustomerBillingRate = new AppliedCustomerBillingRateApi(tmfApiFactory.getTMF678CustomerBillApiClient());
 	}
 
-	public List<String> saveBill(AppliedCustomerBillingRate[] bills) {
+	public List<String> saveBill(AppliedCustomerBillingRate... bills) {
 		logger.info("Saving the bill ...");
 		List<String> ids = new ArrayList<String>();
 
