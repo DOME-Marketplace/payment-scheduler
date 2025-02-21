@@ -55,7 +55,7 @@ public class PaymentService implements InitializingBean {
 		}
 	}
 	
-	public String executePayments(AppliedCustomerBillingRate[] appliedCustomerBillingRates) {
+	public String executePayments(AppliedCustomerBillingRate... appliedCustomerBillingRates) {
 		logger.info("Execute Payments for {} appliedCustomerBillingRate received", appliedCustomerBillingRates.length);
 		int num = 0;
 		
