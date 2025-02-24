@@ -65,6 +65,10 @@ public class PaymentService implements InitializingBean {
 			if (!appliedCustomerBillingRate.getIsBilled()) {
 				logger.debug("Bill {} needs to be paid", appliedCustomerBillingRate.getId());
 				
+				//TODO Get TOKEN
+				String token = getTokenVC();
+				logger.debug("Token: {}", token);
+				
 				//TODO prepare the payload for the payment
 				String payload = getPaymentPayload();
 				
@@ -151,6 +155,13 @@ public class PaymentService implements InitializingBean {
 		//TODO call to EG APIs
 		
 		return true;
+	}
+	
+	private String getTokenVC() {
+		logger.info("Get Token from VC verifier");
+		//Regarding the token retrieval process and the required steps, you can follow Jesús documentation here: https://dome-marketplace.github.io/powers-of-representation/#Authenticating%20with%20Verifiable%20Credentials,%20Machine-To-Machine%20(M2M)
+		
+		return "token";
 	}
 	
 
