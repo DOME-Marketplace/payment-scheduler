@@ -28,18 +28,12 @@ public class PaymentSchedulerController {
 	@RequestMapping(value = "/pay", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> pay(@RequestBody String applied) throws Throwable {
 		logger.info("Received request with appliedCustomerBillingRates");
-		
-		//try {
-			AppliedCustomerBillingRate[] appliedCustomerBillingRates = JSON.getGson().fromJson(applied, AppliedCustomerBillingRate[].class);
-			logger.info("Number of AppliedCustomerBillingRates received: {}", appliedCustomerBillingRates.length);
 
-			String response = paymentService.executePayments(appliedCustomerBillingRates);
-			return new ResponseEntity<String>(response, HttpStatus.OK);
-		/*} catch (IllegalArgumentException e) {
-			logger.error("Error: {}", e.getMessage());
-			return new ResponseEntity<String>("Error: " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
-		}*/
-		
+		AppliedCustomerBillingRate[] appliedCustomerBillingRates = JSON.getGson().fromJson(applied,	AppliedCustomerBillingRate[].class);
+		logger.info("Number of AppliedCustomerBillingRates received: {}", appliedCustomerBillingRates.length);
+
+		String response = paymentService.executePayments(appliedCustomerBillingRates);
+		return new ResponseEntity<String>(response, HttpStatus.OK);
 	}
 
 	@RequestMapping(value = "/start", method = RequestMethod.POST)

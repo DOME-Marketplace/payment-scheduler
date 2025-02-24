@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import it.eng.dome.brokerage.exception.ErrorResponse;
@@ -45,6 +46,11 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(it.eng.dome.tmforum.tmf678.v4.ApiException.class)
 	protected ResponseEntity<Object> handleIllegalStateException(HttpServletRequest request, it.eng.dome.tmforum.tmf678.v4.ApiException ex) {
 		return buildResponseEntity(new ErrorResponse(request, HttpStatus.SERVICE_UNAVAILABLE, ex));
+	}
+	
+	@ExceptionHandler(HttpClientErrorException.class)
+	protected ResponseEntity<Object> handleBadRequest(HttpServletRequest request, HttpClientErrorException ex) {
+		return buildResponseEntity(new ErrorResponse(request, HttpStatus.BAD_REQUEST, ex));
 	}
 	
 	private ResponseEntity<Object> buildResponseEntity(ErrorResponse errorResponse) {

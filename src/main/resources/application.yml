@@ -43,7 +43,12 @@ management:
       show-details: never
   health:
     probes:
-      enabled: true	
+      enabled: true
+
+# Payment Service
+payment:
+  payment_base_url: ${PAYMENT_BASE_URL:https://dpas-sbx.egroup.hu/api}
+  payment_start_non_interactive: ${PAYMENT_START_NON_INTERACTIVE:/payment-start-non-interactive}	
 
 tmforumapi:
   tmf_endpoint: ${TMF_ENDPOINT:https://dome-dev.eng.it}

@@ -5,7 +5,7 @@ import java.util.List;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-public class PaymentDTO {
+public class BaseAttributes {
 
 	private String externalId;
 	private String customerId;
@@ -13,8 +13,8 @@ public class PaymentDTO {
 	private String type;
 	private String invoiceId;
 	private List<PaymentItem> paymentItems;
-	private String processSuccessUrl;
-	private String processErrorUrl;
+//	private String processSuccessUrl;
+//	private String processErrorUrl;
 
 	public String getExternalId() {
 		return externalId;
@@ -63,7 +63,7 @@ public class PaymentDTO {
 	public void setPaymentItems(List<PaymentItem> paymentItems) {
 		this.paymentItems = paymentItems;
 	}
-
+/*
 	public String getProcessSuccessUrl() {
 		return processSuccessUrl;
 	}
@@ -79,7 +79,7 @@ public class PaymentDTO {
 	public void setProcessErrorUrl(String processErrorUrl) {
 		this.processErrorUrl = processErrorUrl;
 	}
-	
+*/	
 	public String toJson() {
         ObjectMapper objectMapper = new ObjectMapper();
 		try {

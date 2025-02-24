@@ -1,8 +1,8 @@
 package it.eng.dome.payment.scheduler.service;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -10,8 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import it.eng.dome.payment.scheduler.dto.PaymentDTO;
-import it.eng.dome.payment.scheduler.dto.PaymentDTO.PaymentItem;
+
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.tmforum.tmf678.v4.ApiClient;
@@ -35,6 +34,9 @@ public class PaymentService implements InitializingBean {
 
 	private AppliedCustomerBillingRateApi appliedCustomerBillingRate;
 	private CustomerBillExtensionApi customerBillExtension;
+	
+	@Autowired
+	private StartPayment payment;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -69,10 +71,7 @@ public class PaymentService implements InitializingBean {
 				String token = getTokenVC();
 				logger.debug("Token: {}", token);
 				
-				//TODO prepare the payload for the payment
-				String payload = getPaymentPayload();
-				
-				if (callPaymentEG(payload)) {
+				if (payment.paymentNonInteractive()) {
 					
 					//TODO update AppliedCustomerBillingRate and save Payment in TMForum				
 					if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
@@ -147,62 +146,26 @@ public class PaymentService implements InitializingBean {
 	
 
 	
-	
+	/*
 	private boolean callPaymentEG(String payload) {
 		logger.info("Payment via EG APIs");
 		
 		logger.debug("Payment payload to send EG APIs: {}", payload);
 		//TODO call to EG APIs
 		
-		return true;
-	}
+		payment.paymentNonInteractive();
+		
+		return false;
+	}*/
 	
 	private String getTokenVC() {
 		logger.info("Get Token from VC verifier");
-		//Regarding the token retrieval process and the required steps, you can follow Jesús documentation here: https://dome-marketplace.github.io/powers-of-representation/#Authenticating%20with%20Verifiable%20Credentials,%20Machine-To-Machine%20(M2M)
+		//Regarding the token retrieval process and the required steps, 
+		//you can follow Jesús documentation here: https://dome-marketplace.github.io/powers-of-representation/#Authenticating%20with%20Verifiable%20Credentials,%20Machine-To-Machine%20(M2M)
 		
-		return "token";
+		return "todo-token";
 	}
 	
 
-	private String getPaymentPayload() {
-		//TODO payload dummy
-		PaymentDTO paymenDto = new PaymentDTO();
-		paymenDto.setExternalId("id-ext");
-		paymenDto.setCustomerId("id-customer");
-		paymenDto.setCustomerOrganizationId("org");
-		paymenDto.setType("ONETIME");
-		paymenDto.setInvoiceId("id-invoicing");
-		paymenDto.setProcessSuccessUrl("url-ok");
-		paymenDto.setProcessErrorUrl("url-error");
-		
-		PaymentItem paymentItem = paymenDto.new PaymentItem();
-		paymentItem.setProductProviderId("product-id");
-		paymentItem.setAmount(10);
-		paymentItem.setCurrency("currency");
-		paymentItem.setRecurring("recurring");
-		paymentItem.setProductProviderSpecificData("{}");
-		
-		List<PaymentItem> paymentItems = new ArrayList<PaymentItem>();
-		paymentItems.add(paymentItem);
-		
-		paymenDto.setPaymentItems(paymentItems);
-/*
-    "externalId": str(self._order.order_id),
-    "customerId": self._order.customer_id, 
-    "customerOrganizationId": str(self._order.owner_organization_id),
-    "type": "ONETIME", # recurring payment type is not yet implemented in the Dpas API
-    "invoiceId": "invoice id", # should be the order's invoice ID
-    "paymentItems": [{
-        "productProviderId": "1", # should be the product provider's ID
-        "amount": str(total),
-        "currency": current_curr,
-        "recurring" : False,
-        "productProviderSpecificData": {}
-    }],
-    "processSuccessUrl": return_url,
-    "processErrorUrl": cancel_url		
- */
-		return paymenDto.toJson();
-	}
+	
 }
