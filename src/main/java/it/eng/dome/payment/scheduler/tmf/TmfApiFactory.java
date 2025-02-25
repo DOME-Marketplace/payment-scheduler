@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
-
 @Component(value = "tmfApiFactory")
 @Scope(value = ConfigurableBeanFactory.SCOPE_SINGLETON)
 public final class TmfApiFactory implements InitializingBean {
@@ -35,6 +34,7 @@ public final class TmfApiFactory implements InitializingBean {
 
 	@Value( "${tmforumapi.tmf678_billing_path}" )
 	private String tmf678CustomerBillPath;
+	
 	
 	public it.eng.dome.tmforum.tmf678.v4.ApiClient getTMF678CustomerBillApiClient() {
 		final it.eng.dome.tmforum.tmf678.v4.ApiClient apiClient = it.eng.dome.tmforum.tmf678.v4.Configuration.getDefaultApiClient();
