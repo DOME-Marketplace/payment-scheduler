@@ -3,6 +3,11 @@
 **Release Notes** of the *Payment Scheduler* software:
 
 
+### <code>0.0.2</code> :calendar: 25/02/2025
+**Feature**
+* Add EG API payment `/payment-start-non-interactive` (only for testing).
+
+
 ### <code>0.0.1</code> :calendar: 21/02/2025
 **Feature**
 * Add swagger UI for REST APIs.

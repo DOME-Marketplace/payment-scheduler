@@ -1,6 +1,5 @@
 package it.eng.dome.payment.scheduler.dto;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
