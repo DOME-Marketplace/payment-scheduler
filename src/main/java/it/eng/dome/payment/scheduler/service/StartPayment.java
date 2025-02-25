@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,14 +93,15 @@ public class StartPayment {
 	private String getPaymentStartNonInteractive() {
 		// TODO payload dummy
 		BaseAttributes baseAttributes = new BaseAttributes();
-		baseAttributes.setExternalId("urn:ngsi-ld:product-order:50df4527-ac1d-4b6b-a73d-4760dd533b67");
-		baseAttributes.setCustomerId("83916709-c00e-4d2a-8379-32ce4ec5ebfe");
-		baseAttributes.setCustomerOrganizationId("urn:ngsi-ld:organization:f2ad85a5-9edf-497c-b343-f08899084ebb");
+		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
+		baseAttributes.setExternalId(randomExternalId);
+		baseAttributes.setCustomerId("2");
+		baseAttributes.setCustomerOrganizationId("677d1195762b774ef7334acc");
 		baseAttributes.setInvoiceId("ab-132");
 
 		PaymentItem paymentItem = baseAttributes.new PaymentItem();
 		paymentItem.setProductProviderId("1");
-		paymentItem.setAmount(1);
+		paymentItem.setAmount(10);
 		paymentItem.setCurrency("EUR");
 		paymentItem.setRecurring(true);
 
@@ -114,7 +116,7 @@ public class StartPayment {
 
 		PaymentStartNonInteractive paymentStartNonInteractive = new PaymentStartNonInteractive();
 		paymentStartNonInteractive.setBaseAttributes(baseAttributes);
-		paymentStartNonInteractive.setPaymentPreAuthorizationId("8a98d502-fc0b-472f-a69a-670b4f550b50");
+		paymentStartNonInteractive.setPaymentPreAuthorizationId("49dab91a-fe66-4f88-9ff2-d13242ad44c7");
 
 		return paymentStartNonInteractive.toJson();
 	}
