@@ -1,7 +1,9 @@
 package it.eng.dome.payment.scheduler.service;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +16,6 @@ import org.springframework.web.client.RestTemplate;
 
 import it.eng.dome.payment.scheduler.dto.BaseAttributes;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
-import it.eng.dome.payment.scheduler.exception.ControllerExceptionHandler;
 import it.eng.dome.payment.scheduler.dto.BaseAttributes.PaymentItem;
 
 @Component
@@ -66,19 +67,21 @@ public class StartPayment {
 	private String getPaymentStartNonInteractive() {
 		//TODO payload dummy
 		BaseAttributes baseAttributes = new BaseAttributes();
-		baseAttributes.setExternalId("id-ext-1");
-		baseAttributes.setCustomerId("id-customer-1");
+		baseAttributes.setExternalId("urn:ngsi-ld:product-order:50df4527-ac1d-4b6b-a73d-4760dd533b67");
+		baseAttributes.setCustomerId("83916709-c00e-4d2a-8379-32ce4ec5ebfe");
 		baseAttributes.setCustomerOrganizationId("urn:ngsi-ld:organization:f2ad85a5-9edf-497c-b343-f08899084ebb");
-		baseAttributes.setType("ONETIME");
-		baseAttributes.setInvoiceId("id-invoicing-1");
+		baseAttributes.setInvoiceId("ab-132");
 
 		
 		PaymentItem paymentItem = baseAttributes.new PaymentItem();
-		paymentItem.setProductProviderId("product-id-1");
+		paymentItem.setProductProviderId("1");
 		paymentItem.setAmount(1);
 		paymentItem.setCurrency("EUR");
-		paymentItem.setRecurring("recurring");
-		paymentItem.setProductProviderSpecificData("{}");
+		paymentItem.setRecurring(true);
+		
+		Map<String, String> attrs = new HashMap<String, String>();
+		//attrs.put("additionalProp1", "data1");
+		paymentItem.setProductProviderSpecificData(attrs);
 		
 		List<PaymentItem> paymentItems = new ArrayList<PaymentItem>();
 		paymentItems.add(paymentItem);
@@ -88,40 +91,8 @@ public class StartPayment {
 		PaymentStartNonInteractive paymentStartNonInteractive = new PaymentStartNonInteractive();
 		paymentStartNonInteractive.setBaseAttributes(baseAttributes);
 		paymentStartNonInteractive.setPaymentPreAuthorizationId("1bf099fd-7d57-426a-b420-6ced7d2404e8");
-/*
-    "externalId": str(self._order.order_id),
-    "customerId": self._order.customer_id, 
-    "customerOrganizationId": str(self._order.owner_organization_id),
-    "type": "ONETIME", # recurring payment type is not yet implemented in the Dpas API
-    "invoiceId": "invoice id", # should be the order's invoice ID
-    "paymentItems": [{
-        "productProviderId": "1", # should be the product provider's ID
-        "amount": str(total),
-        "currency": current_curr,
-        "recurring" : False,
-        "productProviderSpecificData": {}
-    }],
-    "processSuccessUrl": return_url,
-    "processErrorUrl": cancel_url		
- */
+		
 		return paymentStartNonInteractive.toJson();
 	}
 	
-/**
- 
-{
-   "paymentId":"0fa4c855-5793-47bf-92fd-2cd1cc6cb6ae",
-   "paymentPreAuthorizationId":"1bf099fd-7d57-426a-b420-6ced7d2404e8",
-   "payoutList":[
-      {
-         "state":"PAID_BY_CUSTOMER",
-         "productProviderId":1,
-         "gatewayId":1,
-         "amount":22.0000000000000000,
-         "currency":"EUR"
-      }
-   ]
-}	 
-	  
- */
 }
