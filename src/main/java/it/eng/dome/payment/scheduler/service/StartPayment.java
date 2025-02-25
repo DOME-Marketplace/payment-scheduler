@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import it.eng.dome.payment.scheduler.dto.BaseAttributes;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.JwtResponse;
-import it.eng.dome.payment.scheduler.model.PaymentResponse;
 import it.eng.dome.payment.scheduler.dto.BaseAttributes.PaymentItem;
 
 @Component
@@ -57,24 +56,19 @@ public class StartPayment {
 		HttpEntity<String> request = new HttpEntity<>(payment, headers);
 
 		String response = restTemplate.postForObject(url, request, String.class);
-		
 
 		ObjectMapper objectMapper = new ObjectMapper();
 		try {
-			if (response.contains("responseJwt")) {				
-				JwtResponse jwtResponse = objectMapper.readValue(response, JwtResponse.class);
+			
+			JwtResponse jwtResponse = objectMapper.readValue(response, JwtResponse.class);				
+			if (jwtResponse.getResponseJwt() != null) {
 				logger.error("ResponseJwt: {}", jwtResponse.getResponseJwt());
+				return true;
+			}else {
 				logger.error("Error: {}", jwtResponse.getError().toJson());
 				return false;
-			} else if (response.contains("paymentId")) {
-				PaymentResponse paymentResponse = objectMapper.readValue(response, PaymentResponse.class);
-				logger.debug("PaymentId: {}", paymentResponse.getPaymentId());
-				logger.debug("PaymentPreAuthorizationId: {}", paymentResponse.getPaymentPreAuthorizationId());				
-				return true;
-			} else {
-				logger.error("Response: {} ", response);
-				return false;
 			}
+			
 		} catch (JsonMappingException e) {
 			logger.error("Error: {} ", e.getMessage());
 			return false;
@@ -116,7 +110,7 @@ public class StartPayment {
 
 		PaymentStartNonInteractive paymentStartNonInteractive = new PaymentStartNonInteractive();
 		paymentStartNonInteractive.setBaseAttributes(baseAttributes);
-		paymentStartNonInteractive.setPaymentPreAuthorizationId("49dab91a-fe66-4f88-9ff2-d13242ad44c7");
+		paymentStartNonInteractive.setPaymentPreAuthorizationId("0e2948c6-26b7-48ce-91f4-59dcd8e4e97a");
 
 		return paymentStartNonInteractive.toJson();
 	}
