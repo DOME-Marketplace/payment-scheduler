@@ -37,6 +37,9 @@ public class PaymentService implements InitializingBean {
 	
 	@Autowired
 	private StartPayment payment;
+	
+	@Autowired
+	private VCVerifier vcverifier;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -67,19 +70,20 @@ public class PaymentService implements InitializingBean {
 			if (!appliedCustomerBillingRate.getIsBilled()) {
 				logger.debug("Bill {} needs to be paid", appliedCustomerBillingRate.getId());
 				
-				//TODO Get TOKEN
-				String token = getTokenVC();
-				logger.debug("Token: {}", token);
+				String token = vcverifier.getVCVerifierToken();
 				
-				if (payment.paymentNonInteractive()) {
-					
-					//TODO update AppliedCustomerBillingRate and save Payment in TMForum				
-					if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
-						num++;
+				if (token != null) {
+					logger.debug("Token: {}", token);	
+					if (payment.paymentNonInteractive(token)) {
+						
+						//TODO update AppliedCustomerBillingRate and save Payment in TMForum				
+						if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
+							num++;
+						}
+						
+					}else {
+						logger.warn("There was a problem with the payment for bill: {}", appliedCustomerBillingRate.getId());
 					}
-					
-				}else {
-					logger.warn("There was a problem with the payment for bill: {}", appliedCustomerBillingRate.getId());
 				}
 				
 			}else {
@@ -143,29 +147,5 @@ public class PaymentService implements InitializingBean {
 			return null;
 		}
 	}
-	
-
-	
-	/*
-	private boolean callPaymentEG(String payload) {
-		logger.info("Payment via EG APIs");
-		
-		logger.debug("Payment payload to send EG APIs: {}", payload);
-		//TODO call to EG APIs
-		
-		payment.paymentNonInteractive();
-		
-		return false;
-	}*/
-	
-	private String getTokenVC() {
-		logger.info("Get Token from VC verifier");
-		//Regarding the token retrieval process and the required steps, 
-		//you can follow Jesús documentation here: https://dome-marketplace.github.io/powers-of-representation/#Authenticating%20with%20Verifiable%20Credentials,%20Machine-To-Machine%20(M2M)
-		
-		return "todo-token";
-	}
-	
-
 	
 }

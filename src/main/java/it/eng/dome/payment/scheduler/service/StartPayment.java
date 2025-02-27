@@ -15,14 +15,10 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import it.eng.dome.payment.scheduler.dto.BaseAttributes;
+import it.eng.dome.payment.scheduler.dto.BaseAttributes.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.JwtResponse;
-import it.eng.dome.payment.scheduler.dto.BaseAttributes.PaymentItem;
 
 @Component
 public class StartPayment {
@@ -40,7 +36,7 @@ public class StartPayment {
 		this.restTemplate = restTemplate;
 	}
 
-	public boolean paymentNonInteractive() {
+	public boolean paymentNonInteractive(String token) {
 		logger.debug("Start Non-Interactive payment");
 
 		// TODO prepare the payload for the payment
@@ -55,34 +51,16 @@ public class StartPayment {
 		headers.setContentType(MediaType.APPLICATION_JSON);
 		HttpEntity<String> request = new HttpEntity<>(payment, headers);
 
-		String response = restTemplate.postForObject(url, request, String.class);
-
-		ObjectMapper objectMapper = new ObjectMapper();
-		try {
-			
-			JwtResponse jwtResponse = objectMapper.readValue(response, JwtResponse.class);				
-			if (jwtResponse.getResponseJwt() != null) {
-				logger.error("ResponseJwt: {}", jwtResponse.getResponseJwt());
-				return true;
-			}else {
-				logger.error("Error: {}", jwtResponse.getError().toJson());
-				return false;
-			}
-			
-		} catch (JsonMappingException e) {
-			logger.error("Error: {} ", e.getMessage());
-			return false;
-		} catch (JsonProcessingException e) {
-			logger.error("Error: {} ", e.getMessage());
+		JwtResponse response = restTemplate.postForObject(url, request, JwtResponse.class);
+		if (response.getResponseJwt() != null) {
+			logger.error("ResponseJwt: {}", response.getResponseJwt());
+			return true;
+		}else {
+			logger.error("Error: {}", response.getError().toJson());
 			return false;
 		}
 	}
 
-	public void payment() {
-		logger.debug("Start payment");
-
-		logger.info(restTemplate.toString());
-	}
 
 	private String getPaymentStartNonInteractive() {
 		// TODO payload dummy
@@ -94,7 +72,7 @@ public class StartPayment {
 		baseAttributes.setInvoiceId("ab-132");
 
 		PaymentItem paymentItem = baseAttributes.new PaymentItem();
-		paymentItem.setProductProviderId("1");
+		paymentItem.setProductProviderId("1a");
 		paymentItem.setAmount(10);
 		paymentItem.setCurrency("EUR");
 		paymentItem.setRecurring(true);

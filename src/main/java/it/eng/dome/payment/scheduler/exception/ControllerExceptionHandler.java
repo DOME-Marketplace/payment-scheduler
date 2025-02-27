@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import it.eng.dome.brokerage.exception.ErrorResponse;
@@ -51,6 +52,11 @@ public class ControllerExceptionHandler extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(HttpClientErrorException.class)
 	protected ResponseEntity<Object> handleBadRequest(HttpServletRequest request, HttpClientErrorException ex) {
 		return buildResponseEntity(new ErrorResponse(request, HttpStatus.BAD_REQUEST, ex));
+	}
+
+	@ExceptionHandler(HttpServerErrorException.class)
+	protected ResponseEntity<Object> handleInternalServerError(HttpServletRequest request, HttpServerErrorException ex) {
+		return buildResponseEntity(new ErrorResponse(request, HttpStatus.INTERNAL_SERVER_ERROR, ex));
 	}
 	
 	private ResponseEntity<Object> buildResponseEntity(ErrorResponse errorResponse) {
