@@ -3,6 +3,11 @@
 **Release Notes** of the *Payment Scheduler* software:
 
 
+### <code>0.0.3</code> :calendar: 27/02/2025
+**Feature**
+* Add `VC Verifier` API to get the **token** for API Payment.
+
+
 ### <code>0.0.2</code> :calendar: 25/02/2025
 **Feature**
 * Add EG API payment `/payment-start-non-interactive` (only for testing).
