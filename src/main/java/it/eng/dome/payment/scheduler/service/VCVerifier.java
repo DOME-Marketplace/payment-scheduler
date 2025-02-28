@@ -22,6 +22,9 @@ public class VCVerifier {
 	@Value("${vc_verifier.endpoint}")
 	public String endpoint;
 
+	@Value("${vc_verifier.client_id}")
+	public String client_id;
+	
 	@Value("${vc_verifier.client_assertion_type}")
 	public String client_assertion_type;
 
@@ -41,6 +44,7 @@ public class VCVerifier {
 
 		// prepare the body in x-www-form-urlencoded format
 		String body = "client_assertion_type=" + client_assertion_type
+				+ "&client_id=" + client_id
 				+ "&client_assertion=" + client_assertion
 				+ "&grant_type=client_credentials";
 
