@@ -51,6 +51,13 @@ public class PaymentService implements InitializingBean {
 	public void payments() {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
+		// remove this lines
+		logger.info("---- TEST TOKEN ----");
+		String token = vcverifier.getVCVerifierToken();
+		logger.info("Token: {}", token);
+		logger.info("---- END TEST ----");
+		// remove this lines
+		
 		try {
 			List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
 			logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
