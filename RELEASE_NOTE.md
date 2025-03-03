@@ -3,6 +3,11 @@
 **Release Notes** of the *Payment Scheduler* software:
 
 
+### <code>0.0.4</code> :calendar: 03/03/2025
+**BugFixing**
+* Update **body** for the `getVCVerifierToken()` method.
+
+
 ### <code>0.0.3</code> :calendar: 27/02/2025
 **Feature**
 * Add `VC Verifier` API to get the **token** for API Payment.

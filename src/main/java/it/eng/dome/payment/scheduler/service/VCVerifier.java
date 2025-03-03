@@ -1,5 +1,8 @@
 package it.eng.dome.payment.scheduler.service;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,12 +46,13 @@ public class VCVerifier {
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
 		// prepare the body in x-www-form-urlencoded format
-		String body = "client_assertion_type=" + client_assertion_type
-				+ "&client_id=" + client_id
-				+ "&client_assertion=" + client_assertion
-				+ "&grant_type=client_credentials";
+		Map<String, String> body = new HashMap<>();
+        body.put("grant_type", "client_credentials");
+        body.put("client_id", client_id);
+        body.put("client_assertion_type", client_assertion_type);
+        body.put("client_assertion", client_assertion);
 
-		HttpEntity<String> request = new HttpEntity<>(body, headers);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
 		ResponseEntity<TokenResponse> response = restTemplate.exchange(endpoint, HttpMethod.POST, request, TokenResponse.class);
 		
 		if (response.getBody() != null) {
