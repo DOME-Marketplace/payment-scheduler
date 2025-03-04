@@ -1,8 +1,5 @@
 package it.eng.dome.payment.scheduler.service;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,6 +9,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import it.eng.dome.payment.scheduler.model.TokenResponse;
@@ -46,13 +45,13 @@ public class VCVerifier {
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
 		// prepare the body in x-www-form-urlencoded format
-		Map<String, String> body = new HashMap<>();
-        body.put("grant_type", "client_credentials");
-        body.put("client_id", client_id);
-        body.put("client_assertion_type", client_assertion_type);
-        body.put("client_assertion", client_assertion);
+		MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+        body.add("grant_type", "client_credentials");
+        body.add("client_id", client_id);
+        body.add("client_assertion_type", client_assertion_type);
+        body.add("client_assertion", client_assertion);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 		ResponseEntity<TokenResponse> response = restTemplate.exchange(endpoint, HttpMethod.POST, request, TokenResponse.class);
 		
 		if (response.getBody() != null) {
