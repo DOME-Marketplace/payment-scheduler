@@ -2,6 +2,10 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>0.0.5</code> :calendar: 03/03/2025
+**BugFixing**
+* Usage of the `LinkedMultiValueMap()` for **application/x-www-form-urlencoded**.
+
 
 ### <code>0.0.4</code> :calendar: 03/03/2025
 **BugFixing**
