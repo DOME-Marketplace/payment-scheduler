@@ -1,6 +1,8 @@
 package it.eng.dome.payment.scheduler.service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,9 +17,14 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import it.eng.dome.payment.scheduler.dto.BaseAttributes;
 import it.eng.dome.payment.scheduler.dto.BaseAttributes.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
+import it.eng.dome.payment.scheduler.model.EGPayment;
 import it.eng.dome.payment.scheduler.model.JwtResponse;
 
 @Component
@@ -36,7 +43,7 @@ public class StartPayment {
 		this.restTemplate = restTemplate;
 	}
 
-	public boolean paymentNonInteractive(String token) {
+	public EGPayment paymentNonInteractive(String token) {
 		logger.debug("Start Non-Interactive payment");
 
 		// TODO prepare the payload for the payment
@@ -53,11 +60,23 @@ public class StartPayment {
 
 		JwtResponse response = restTemplate.postForObject(url, request, JwtResponse.class);
 		if (response.getResponseJwt() != null) {
-			logger.error("ResponseJwt: {}", response.getResponseJwt());
-			return true;
+			String responseJwt = response.getResponseJwt();
+			logger.debug("ResponseJwt: {}", responseJwt);
+			try {
+				ObjectMapper objectMapper = new ObjectMapper();
+				DecodedJWT jwt = JWT.decode(responseJwt);
+				logger.debug("Payload: {}", jwt.getPayload());
+				logger.info("paymentId: {}", jwt.getClaim("paymentId").asString());
+				logger.info("paymentPreAuthorizationId: {}", jwt.getClaim("paymentPreAuthorizationId").asString());
+				
+				return objectMapper.readValue(decode(jwt.getPayload()), EGPayment.class);
+			} catch (Exception e) {
+				logger.error(e.getMessage());
+				return null;
+	        }
 		}else {
 			logger.error("Error: {}", response.getError().toJson());
-			return false;
+			return null;
 		}
 	}
 
@@ -72,7 +91,7 @@ public class StartPayment {
 		baseAttributes.setInvoiceId("ab-132");
 
 		PaymentItem paymentItem = baseAttributes.new PaymentItem();
-		paymentItem.setProductProviderId("1a");
+		paymentItem.setProductProviderId(1);
 		paymentItem.setAmount(10);
 		paymentItem.setCurrency("EUR");
 		paymentItem.setRecurring(true);
@@ -91,6 +110,11 @@ public class StartPayment {
 		paymentStartNonInteractive.setPaymentPreAuthorizationId("0e2948c6-26b7-48ce-91f4-59dcd8e4e97a");
 
 		return paymentStartNonInteractive.toJson();
+	}
+	
+	private String decode(String s) {
+		byte[] decodedBytes = Base64.getDecoder().decode(s);
+        return new String(decodedBytes);
 	}
 
 }

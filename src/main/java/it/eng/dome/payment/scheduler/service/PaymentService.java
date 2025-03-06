@@ -11,6 +11,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import it.eng.dome.payment.scheduler.model.EGPayment;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.tmforum.tmf678.v4.ApiClient;
@@ -48,23 +49,13 @@ public class PaymentService implements InitializingBean {
 		customerBillExtension = new CustomerBillExtensionApi(apiClientTMF678);
 	}
 	
-	public void payments() {
+	public void payments() throws ApiException {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
-		// remove this lines
-		logger.info("---- TEST TOKEN ----");
-		String token = vcverifier.getVCVerifierToken();
-		logger.info("Token: {}", token);
-		logger.info("---- END TEST ----");
-		// remove this lines
+		List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
+		logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
+		executePayments(appliedList.toArray(new AppliedCustomerBillingRate[0]));
 		
-		try {
-			List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
-			logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
-			executePayments(appliedList.toArray(new AppliedCustomerBillingRate[0]));
-		} catch (ApiException e) {
-			logger.debug("Error to get AppliedCustomerBillingRate - {}", e.getMessage());
-		}
 	}
 	
 	public String executePayments(AppliedCustomerBillingRate... appliedCustomerBillingRates) {
@@ -77,11 +68,13 @@ public class PaymentService implements InitializingBean {
 			if (!appliedCustomerBillingRate.getIsBilled()) {
 				logger.debug("Bill {} needs to be paid", appliedCustomerBillingRate.getId());
 				
-				String token = vcverifier.getVCVerifierToken();
+				String token = "test-token"; /* vcverifier.getVCVerifierToken();*/
 				
 				if (token != null) {
-					logger.debug("Token: {}", token);	
-					if (payment.paymentNonInteractive(token)) {
+					logger.debug("Token: {}", token);
+					EGPayment egpayment = payment.paymentNonInteractive(token);
+					if (egpayment != null) {
+						logger.debug("PaymentId: {}", egpayment.getPaymentId());
 						
 						//TODO update AppliedCustomerBillingRate and save Payment in TMForum				
 						if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
