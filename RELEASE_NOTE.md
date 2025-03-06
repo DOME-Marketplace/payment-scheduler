@@ -2,6 +2,12 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+
+### <code>0.0.6</code> :calendar: 07/03/2025
+**BugFixing**
+* Update of the `PaymentStartNonInteractive` class.
+
+
 ### <code>0.0.5</code> :calendar: 04/03/2025
 **BugFixing**
 * Usage of the `LinkedMultiValueMap()` for **application/x-www-form-urlencoded**.

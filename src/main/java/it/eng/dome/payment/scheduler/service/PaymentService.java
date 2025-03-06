@@ -49,13 +49,21 @@ public class PaymentService implements InitializingBean {
 		customerBillExtension = new CustomerBillExtensionApi(apiClientTMF678);
 	}
 	
+	
 	public void payments() throws ApiException {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
 		List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
 		logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
-		executePayments(appliedList.toArray(new AppliedCustomerBillingRate[0]));
 		
+		List<AppliedCustomerBillingRate> applied = aggregate(appliedList);
+		
+		if (applied != null) {
+			logger.debug("Number of AppliedCustomerBillingRate aggregates found: {}", applied.size());
+			executePayments(applied.toArray(new AppliedCustomerBillingRate[0]));
+		}else {
+			logger.warn("List of AppliedCustomerBillingRate cannot be null");
+		}
 	}
 	
 	public String executePayments(AppliedCustomerBillingRate... appliedCustomerBillingRates) {
@@ -148,4 +156,8 @@ public class PaymentService implements InitializingBean {
 		}
 	}
 	
+	private List<AppliedCustomerBillingRate> aggregate(List<AppliedCustomerBillingRate> appliedList) {
+		//TODO implement aggregation feature ...
+		return appliedList;
+	}
 }
