@@ -1,0 +1,18 @@
+{
+   "paymentPreAuthorizationId":"0e2948c6-26b7-48ce-91f4-59dcd8e4e97a",
+   "baseAttributes":{
+      "externalId":"611c2a6d-5197-452c-ba1b-fd1393c58b",
+      "customerId":"2",
+      "customerOrganizationId":"677d1195762b774ef7334acc",
+      "invoiceId":"ab-132",
+      "paymentItems":[
+         {
+            "productProviderId":"1",
+            "amount":10.0,
+            "currency":"EUR",
+            "recurring":true,
+            "productProviderSpecificData":{}
+         }
+      ]
+   }
+}
