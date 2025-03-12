@@ -33,6 +33,9 @@ import com.nimbusds.jose.JWSSigner;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+
+import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
+
 import com.nimbusds.jose.crypto.ECDSASigner;
 
 public class TestToken {
@@ -41,7 +44,11 @@ public class TestToken {
 
 	public static void main(String[] args) {
 		TestToken test = new TestToken();
-		test.createClientAssertion();
+		//String assertion = test.createClientAssertion();
+		//System.out.println("Assertion: " + assertion);
+		
+		String ass = M2MTokenUtils.createClientAssertion(test.credentials);
+		System.out.println(ass);
 	}
 
 	private String createClientAssertion() {
@@ -65,7 +72,17 @@ public class TestToken {
 			String vpTokenJWTString = createVPTokenJWT(vcMachineString, clientId, iat, exp);
 			System.out.println("vpTokenJWTString: " + vpTokenJWTString);
 			
+			Payload payload = new Payload(Map.of(
+	                "sub", clientId,
+	                "iss", clientId,
+	                "aud", "",/*verifierConfig.getVerifierExternalDomain(),*/
+	                "iat", iat,
+	                "exp", exp,
+	                "jti", UUID.randomUUID(),
+	                "vp_token", vpTokenJWTString
+	        ));
 			
+			return generateJWT(payload.toString());
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			((Throwable) e).printStackTrace();

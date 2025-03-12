@@ -14,6 +14,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import it.eng.dome.payment.scheduler.model.TokenResponse;
+import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 
 @Component
 public class VCVerifier {
@@ -39,7 +40,10 @@ public class VCVerifier {
 
 	public String getVCVerifierToken() {
 		logger.info("Get token from VC Verifier at URL: {}", endpoint);
-
+		
+		String assertion = M2MTokenUtils.createClientAssertion(client_assertion);
+		logger.debug("Client Assertion: {}", assertion);
+				
 		// prepare the header
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
@@ -49,7 +53,7 @@ public class VCVerifier {
         body.add("grant_type", "client_credentials");
         body.add("client_id", client_id);
         body.add("client_assertion_type", client_assertion_type);
-        body.add("client_assertion", client_assertion);
+        body.add("client_assertion", assertion);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 		ResponseEntity<TokenResponse> response = restTemplate.exchange(endpoint, HttpMethod.POST, request, TokenResponse.class);
