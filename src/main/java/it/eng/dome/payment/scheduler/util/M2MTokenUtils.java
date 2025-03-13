@@ -9,6 +9,7 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.spec.InvalidKeySpecException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,7 +39,6 @@ public class M2MTokenUtils {
 	
 	private static final String CLIENT_ASSERTION_EXPIRATION = "5";
 	private static final String CLIENT_ASSERTION_EXPIRATION_UNIT_TIME = "MINUTES";
-
 	private static final Logger logger = LoggerFactory.getLogger(M2MTokenUtils.class);
 	
 	public static String createClientAssertion(String jwtCredential) {
@@ -57,19 +57,25 @@ public class M2MTokenUtils {
 			).toEpochMilli();
 			
 			String vpTokenJWTString = createVPTokenJWT(jwtCredential, clientId, iat, exp);
-			logger.info("Get vp_token : {}", vpTokenJWTString);
+			logger.info("Get VPTokenJWT : {}", vpTokenJWTString);
+			
+			//encode vp_token
+			String vp_token = Base64.getEncoder().encodeToString(vpTokenJWTString.getBytes());
+			logger.info("Encode vp_token : {}", vpTokenJWTString);
 			
 			 Payload payload = new Payload(Map.of(
 	                "sub", clientId,
 	                "iss", clientId,
-	                "aud", "https://verifier.dome-marketplace-sbx.org",//verifierConfig.getVerifierExternalDomain(),
+	                "aud", "https://verifier.dome-marketplace-sbx.org",
 	                "iat", iat,
 	                "exp", exp,
 	                "jti", UUID.randomUUID(),
-	                "vp_token", vpTokenJWTString
+	                "vp_token", vp_token
 	        ));
 			 
-			return generateJWT(payload.toString());
+			logger.info("Payload VP : {}", payload.toString());
+			 
+			return generateJWT(payload.toString(), clientId);
 			
 		} catch (Exception e) {
 			logger.error("Error: {}", e.getMessage());
@@ -90,8 +96,9 @@ public class M2MTokenUtils {
                 "vp", vp
         ));
 
-        logger.info("Created VPTokenJWT: {}", payload);
-        return generateJWT(payload.toString());
+        logger.info("Payload of VPTokenJWT: {}", payload);
+        
+        return generateJWT(payload.toString(), clientId);
 	 }
 	
 	private static Map<String, Object> createVP(String jwtCredential, String clientId) {
@@ -104,7 +111,7 @@ public class M2MTokenUtils {
 	    );
 	}
 	
-	private static String generateJWT(String payload) throws Exception {
+	private static String generateJWT(String payload, String clientId) throws Exception {
 		try {
             // Get ECKey
 			String hexPrivateKey = "0xc8eb2db3c873acc6af96fdf1f85fd41a2871bc01bcf512dfad071f2d6f55afa1";
@@ -118,8 +125,7 @@ public class M2MTokenUtils {
             	
 	            // Set Header
 	            JWSHeader jwsHeader = new JWSHeader.Builder(JWSAlgorithm.ES256)
-	                    //.keyID(cryptoComponent.getECKey().getKeyID())
-	            		.keyID("did:key:zDnaeqFhw3mr6LNH8Wffyz3ZKBo2SA4hr1qbvpcUK2NRTcWLX")
+	            		.keyID(clientId)
 	                    .type(JOSEObjectType.JWT)
 	                    .build();
 	            
@@ -135,13 +141,12 @@ public class M2MTokenUtils {
             	return null;
             }
         } catch (Exception e) {
-        	System.out.println(e.getMessage());
-        	//return null;
+        	 logger.error("Error creating JWT: {}", e.getMessage());
             throw new Exception();
         }
 	}
 	
-	public static ECPrivateKey getECPrivateKeyFromHex(String hexKey, String curveName) {
+	private static ECPrivateKey getECPrivateKeyFromHex(String hexKey, String curveName) {
 
         byte[] keyBytes = hexStringToByteArray(hexKey);
         ECNamedCurveParameterSpec ecSpec = ECNamedCurveTable.getParameterSpec(curveName);
@@ -173,8 +178,7 @@ public class M2MTokenUtils {
 		ObjectMapper objectMapper = new ObjectMapper();
 		try {
 			JsonNode jsonNode = objectMapper.readTree(payload);
-			Map<String, Object> claimsMap = objectMapper.convertValue(jsonNode, new TypeReference<>() {
-			});
+			Map<String, Object> claimsMap = objectMapper.convertValue(jsonNode, new TypeReference<>() {	});
 			JWTClaimsSet.Builder builder = new JWTClaimsSet.Builder();
 			for (Map.Entry<String, Object> entry : claimsMap.entrySet()) {
 				builder.claim(entry.getKey(), entry.getValue());
@@ -184,6 +188,10 @@ public class M2MTokenUtils {
 			logger.error("Error while parsing the JWT payload: {}", e.getMessage());
 			return null;
 		}
-
 	}
+	
+	public static String getVCinJWTDecodedFromBase64(String vcTokenBase64) {        
+        byte[] vcTokenDecoded = Base64.getDecoder().decode(vcTokenBase64);
+        return new String(vcTokenDecoded);
+    }
 }
