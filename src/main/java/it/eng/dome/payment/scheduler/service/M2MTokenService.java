@@ -168,8 +168,8 @@ public class M2MTokenService {
 			return jwt.serialize();
 			
 		} catch (Exception e) {
-       	 logger.error("Error creating JWT: {}", e.getMessage());
-           throw new Exception();
+       	 	logger.error("Error creating JWT: {}", e.getMessage());
+       	 	throw new Exception(e);
        }
 	}
 	
