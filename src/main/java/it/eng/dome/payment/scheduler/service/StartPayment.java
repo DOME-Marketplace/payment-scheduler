@@ -85,7 +85,7 @@ public class StartPayment {
 		BaseAttributes baseAttributes = new BaseAttributes();
 		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
 		baseAttributes.setExternalId(randomExternalId);
-		baseAttributes.setCustomerId("2");
+		baseAttributes.setCustomerId("1");
 		baseAttributes.setCustomerOrganizationId("1");
 		baseAttributes.setInvoiceId("ab-132");
 
@@ -106,6 +106,7 @@ public class StartPayment {
 
 		PaymentStartNonInteractive paymentStartNonInteractive = new PaymentStartNonInteractive();
 		paymentStartNonInteractive.setBaseAttributes(baseAttributes);
+		//TODO retrieve paymentPreAuthorizationId from product
 		paymentStartNonInteractive.setPaymentPreAuthorizationId("bae4cd08-1385-4e81-aa6a-260ac2954f1c");
 
 		return paymentStartNonInteractive.toJson();
