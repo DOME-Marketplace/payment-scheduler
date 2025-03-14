@@ -53,9 +53,10 @@ public class PaymentService implements InitializingBean {
 	public void payments() throws ApiException {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
-		logger.info("Token: {}", vcverifier.getVCVerifierToken());
+		payment.paymentNonInteractive(null);
 		
-		/*List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
+		/*
+		List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
 		logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
 		
 		List<AppliedCustomerBillingRate> applied = aggregate(appliedList);
