@@ -160,9 +160,9 @@ public class PaymentService implements InitializingBean {
 		}
 	}
 	
-	private List<AppliedCustomerBillingRate> aggregate(List<AppliedCustomerBillingRate> appliedList) {
+	/*private List<AppliedCustomerBillingRate> aggregate(List<AppliedCustomerBillingRate> appliedList) {
 		logger.info("Aggregate feature");
 		//TODO implement aggregation feature ...
 		return appliedList;
-	}
+	}*/
 }
