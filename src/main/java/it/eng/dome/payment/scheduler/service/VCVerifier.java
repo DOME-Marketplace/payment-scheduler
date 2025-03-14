@@ -28,12 +28,6 @@ public class VCVerifier {
 
 	@Value("${vc_verifier.endpoint}")
 	public String endpoint;
-	/*
-	@Value("${vc_verifier.client_id}")
-	public String client_id;
-	
-	@Value("${vc_verifier.client_assertion_type}")
-	public String client_assertion_type;*/
 
 	@Value("${vc_verifier.lear_credential}")
 	public String learCredential;

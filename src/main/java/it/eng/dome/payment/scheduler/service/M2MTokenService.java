@@ -40,7 +40,6 @@ import it.eng.dome.payment.scheduler.config.PrivateKeyLoader;
 import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 
 
-
 @Service
 public class M2MTokenService {
 	
