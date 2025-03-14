@@ -53,6 +53,7 @@ public class PaymentService implements InitializingBean {
 	public void payments() throws ApiException {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
+		vcverifier.getVCVerifierToken();
 		payment.paymentNonInteractive(null);
 		
 		/*

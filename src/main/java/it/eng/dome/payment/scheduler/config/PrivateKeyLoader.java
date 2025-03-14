@@ -32,7 +32,8 @@ public class PrivateKeyLoader {
 			}
 			
 		} catch (IOException e) {
-			throw new RuntimeException("Error to load privatekey", e);
+			logger.error("Error to load privateKey: {}", e.getMessage());
+			//throw new RuntimeException("Error to load privateKey", e);
 		}
 	}
 
