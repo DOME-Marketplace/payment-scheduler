@@ -2,9 +2,12 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
-### <code>0.0.7</code> :calendar: 14/03/2025
+### <code>0.0.7</code> :calendar: 19/03/2025
 **BugFixing**
 * Create `M2MTokenService` class to build the **client_assertion** for retrieving token from VC Verifier.
+
+**Feature**
+* Use of the `aggregate` feature before payment to group (aggregate) same ApplyCustomerBillRates by **EndDateTime**.
 
 
 ### <code>0.0.6</code> :calendar: 07/03/2025

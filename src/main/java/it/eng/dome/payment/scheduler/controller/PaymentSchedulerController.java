@@ -1,6 +1,8 @@
 package it.eng.dome.payment.scheduler.controller;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +34,7 @@ public class PaymentSchedulerController {
 		AppliedCustomerBillingRate[] appliedCustomerBillingRates = JSON.getGson().fromJson(applied,	AppliedCustomerBillingRate[].class);
 		logger.info("Number of AppliedCustomerBillingRates received: {}", appliedCustomerBillingRates.length);
 
-		String response = paymentService.executePayments(appliedCustomerBillingRates);
+		String response = paymentService.executePayments(Arrays.asList(appliedCustomerBillingRates));
 		return new ResponseEntity<String>(response, HttpStatus.OK);
 	}
 

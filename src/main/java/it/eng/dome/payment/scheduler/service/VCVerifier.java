@@ -16,7 +16,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import it.eng.dome.payment.scheduler.config.PrivateKeyLoader;
 import it.eng.dome.payment.scheduler.model.TokenResponse;
 import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 
