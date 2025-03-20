@@ -42,20 +42,18 @@ public class StartPayment {
 		this.restTemplate = restTemplate;
 	}
 
-	public EGPayment paymentNonInteractive(String token) {
+	public EGPayment paymentNonInteractive(String token, PaymentStartNonInteractive payment) {
 		logger.debug("Start Non-Interactive payment");
-
-		// TODO prepare the payload for the payment
-		String payment = getPaymentStartNonInteractive();
 
 		String url = paymentBaseUrl + paymentStartNonInteractive;
 		logger.info("Payment request to URL: {}", url);
 
-		logger.debug("Payment payload to send EG APIs: {}", payment);
+		logger.debug("Payment payload to send EG APIs: {}", payment.toJson());
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		HttpEntity<String> request = new HttpEntity<>(payment, headers);
+		headers.set("Authorization", "Bearer " + token);
+		HttpEntity<String> request = new HttpEntity<>(payment.toJson(), headers);
 
 		JwtResponse response = restTemplate.postForObject(url, request, JwtResponse.class);
 		if (response.getResponseJwt() != null) {
@@ -80,19 +78,22 @@ public class StartPayment {
 	}
 
 
-	private String getPaymentStartNonInteractive() {
-		// TODO payload dummy
+	public PaymentStartNonInteractive getPaymentStartNonInteractive(String customerId, String customerOrganizationId, String invoiceId, int productProviderId, float amount, String currency, String paymentPreAuthorizationId) {
+		
 		BaseAttributes baseAttributes = new BaseAttributes();
+		// TODO => how to set randomExternalId
 		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
 		baseAttributes.setExternalId(randomExternalId);
-		baseAttributes.setCustomerId("1");
-		baseAttributes.setCustomerOrganizationId("1");
-		baseAttributes.setInvoiceId("ab-132");
+		baseAttributes.setCustomerId(customerId);
+		baseAttributes.setCustomerOrganizationId(customerOrganizationId);
+		baseAttributes.setInvoiceId(invoiceId);
 
 		PaymentItem paymentItem = baseAttributes.new PaymentItem();
-		paymentItem.setProductProviderId(1);
-		paymentItem.setAmount(10);
-		paymentItem.setCurrency("EUR");
+		paymentItem.setProductProviderId(productProviderId);
+		paymentItem.setAmount(amount);
+		paymentItem.setCurrency(currency);
+		
+		// TODO => verify if it can be set TRUE
 		paymentItem.setRecurring(true);
 
 		Map<String, String> attrs = new HashMap<String, String>();
@@ -107,9 +108,9 @@ public class StartPayment {
 		PaymentStartNonInteractive paymentStartNonInteractive = new PaymentStartNonInteractive();
 		paymentStartNonInteractive.setBaseAttributes(baseAttributes);
 		//TODO retrieve paymentPreAuthorizationId from product
-		paymentStartNonInteractive.setPaymentPreAuthorizationId("bae4cd08-1385-4e81-aa6a-260ac2954f1c");
+		paymentStartNonInteractive.setPaymentPreAuthorizationId(paymentPreAuthorizationId);
 
-		return paymentStartNonInteractive.toJson();
+		return paymentStartNonInteractive;
 	}
 	
 	private String decode(String s) {

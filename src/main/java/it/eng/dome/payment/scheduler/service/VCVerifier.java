@@ -16,7 +16,6 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import it.eng.dome.payment.scheduler.config.PrivateKeyLoader;
 import it.eng.dome.payment.scheduler.model.TokenResponse;
 import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 
@@ -28,12 +27,6 @@ public class VCVerifier {
 
 	@Value("${vc_verifier.endpoint}")
 	public String endpoint;
-	/*
-	@Value("${vc_verifier.client_id}")
-	public String client_id;
-	
-	@Value("${vc_verifier.client_assertion_type}")
-	public String client_assertion_type;*/
 
 	@Value("${vc_verifier.lear_credential}")
 	public String learCredential;
@@ -80,11 +73,11 @@ public class VCVerifier {
 					logger.info("Access Token retrieved: {}", accessToken);
 					return accessToken;
 				} else {
-					logger.error("Access Token = null for the request {}", endpoint);
+					logger.error("Cannot found the access_token attribute from the response {}", response.getBody());
 					return null;
 				}
 			} else {
-				logger.error("Body null for the POST request to {}", endpoint);
+				logger.error("Response Body cannot be null making a POST call to {}", endpoint);
 				return null;
 			}
 		}

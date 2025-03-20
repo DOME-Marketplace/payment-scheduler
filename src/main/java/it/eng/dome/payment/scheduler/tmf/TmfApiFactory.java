@@ -35,18 +35,23 @@ public final class TmfApiFactory implements InitializingBean {
 	@Value( "${tmforumapi.tmf678_billing_path}" )
 	private String tmf678CustomerBillPath;
 	
+	private it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTmf678;
+	
 	
 	public it.eng.dome.tmforum.tmf678.v4.ApiClient getTMF678CustomerBillApiClient() {
-		final it.eng.dome.tmforum.tmf678.v4.ApiClient apiClient = it.eng.dome.tmforum.tmf678.v4.Configuration.getDefaultApiClient();
-		if (tmfEnvoy) {
-			// usage of envoyProxy to access on TMForum APIs
-			apiClient.setBasePath(tmfEndpoint + "/" + tmf678CustomerBillPath);
-		}else {
-			// use direct access on specific TMForum APIs software	
-			apiClient.setBasePath(tmfEndpoint + TMF_ENDPOINT_CONCAT_PATH + "customer-bill-management" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort);		
-		}		
-		logger.debug("Invoke Customer Billing API at endpoint: " + apiClient.getBasePath());
-		return apiClient;
+		if (apiClientTmf678 == null) { 
+			apiClientTmf678 = it.eng.dome.tmforum.tmf678.v4.Configuration.getDefaultApiClient();
+			if (tmfEnvoy) {
+				// usage of envoyProxy to access on TMForum APIs
+				apiClientTmf678.setBasePath(tmfEndpoint + "/" + tmf678CustomerBillPath);
+			}else {
+				// use direct access on specific TMForum APIs software	
+				apiClientTmf678.setBasePath(tmfEndpoint + TMF_ENDPOINT_CONCAT_PATH + "customer-bill-management" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort);		
+			}	
+			
+			logger.debug("Invoke Customer Billing API at endpoint: " + apiClientTmf678.getBasePath());
+		}
+		return apiClientTmf678;
 	}
 
 	@Override

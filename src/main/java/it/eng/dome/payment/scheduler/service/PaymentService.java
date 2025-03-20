@@ -1,7 +1,10 @@
 package it.eng.dome.payment.scheduler.service;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +14,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPayment;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
@@ -29,6 +33,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 public class PaymentService implements InitializingBean {
 
 	private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
+	private final static String PREFIX_KEY = "aggregate-period-";
 	
 	@Autowired
 	private TmfApiFactory tmfApiFactory;
@@ -46,67 +51,128 @@ public class PaymentService implements InitializingBean {
 	public void afterPropertiesSet() throws Exception {
 		ApiClient apiClientTMF678 = tmfApiFactory.getTMF678CustomerBillApiClient();
 		appliedCustomerBillingRate = new AppliedCustomerBillingRateApi(apiClientTMF678);
-		customerBillExtension = new CustomerBillExtensionApi(apiClientTMF678);
+		customerBillExtension = new CustomerBillExtensionApi(apiClientTMF678);	
 	}
 	
-	
+	/**
+	 * Main method called by PaymentScheduler service (in the PaymentTask class)
+	 * 
+	 * @throws ApiException
+	 */
 	public void payments() throws ApiException {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
-		vcverifier.getVCVerifierToken();
-		payment.paymentNonInteractive(null);
-		
-		/*
 		List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
-		logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
-		
-		List<AppliedCustomerBillingRate> applied = aggregate(appliedList);
-		
-		if (applied != null) {
-			logger.debug("Number of AppliedCustomerBillingRate aggregates found: {}", applied.size());
-			executePayments(applied.toArray(new AppliedCustomerBillingRate[0]));
-		}else {
-			logger.warn("List of AppliedCustomerBillingRate cannot be null");
-		}*/
+		executePayments(appliedList);
 	}
 	
-	public String executePayments(AppliedCustomerBillingRate... appliedCustomerBillingRates) {
-		logger.info("Execute Payments for {} appliedCustomerBillingRate received", appliedCustomerBillingRates.length);
+	/**
+	 * Execute payments by using the aggregate feature from a list of bill
+	 * 
+	 * @param appliedList
+	 * @return String - provide the number of payments 
+	 */
+	public String executePayments(List<AppliedCustomerBillingRate> appliedList) {
 		int num = 0;
 		
-		for (AppliedCustomerBillingRate appliedCustomerBillingRate : appliedCustomerBillingRates) {
+		if (appliedList != null && !appliedList.isEmpty()) {
+			logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
 			
-			// filter appliedCustomerBillingRates with isBilled a false -> need to be paid
-			if (!appliedCustomerBillingRate.getIsBilled()) {
-				logger.debug("Bill {} needs to be paid", appliedCustomerBillingRate.getId());
-				
-				String token = vcverifier.getVCVerifierToken();
-				
-				if (token != null) {
-					logger.debug("Token: {}", token);
-					EGPayment egpayment = payment.paymentNonInteractive(token);
-					if (egpayment != null) {
-						logger.debug("PaymentId: {}", egpayment.getPaymentId());
-						
-						//TODO update AppliedCustomerBillingRate and save Payment in TMForum				
-						if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
-							num++;
+			// apply aggregate feature
+			Map<String, List<AppliedCustomerBillingRate>> aggregates = aggregate(appliedList);
+
+			if (!aggregates.isEmpty()) {
+				logger.debug("Number of AppliedCustomerBillingRate aggregates: {}", aggregates.size());
+								
+				for (Map.Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
+					
+					String key = entry.getKey();
+					List<AppliedCustomerBillingRate> applied = entry.getValue();
+					logger.debug("Number of applied aggregate: {} - for {}", applied.size(), key);
+
+					float taxIncludedAmount = 0;
+					AppliedCustomerBillingRate appliedCustomerBillingRate = null;
+					for (AppliedCustomerBillingRate apply : applied) {
+						taxIncludedAmount = +apply.getTaxIncludedAmount().getValue();
+						if (appliedCustomerBillingRate == null) {
+							appliedCustomerBillingRate = apply;
 						}
-						
-					}else {
-						logger.warn("There was a problem with the payment for bill: {}", appliedCustomerBillingRate.getId());
 					}
-				}
+					
+					executePayments(appliedCustomerBillingRate, taxIncludedAmount);
+					num++;
+				}				
 				
-			}else {
-				logger.debug("Bill {} already paid", appliedCustomerBillingRate.getId());
+			} else {
+				logger.warn("List of AppliedCustomerBillingRate aggregate is empty");
 			}
+		}else {
+			logger.warn("List of AppliedCustomerBillingRate is empty");
 		}
+		
 		String response = "Number of payments executed: " + num;
 		logger.info(response);
 		return response;
 	}
+	
+	/**
+	 * 
+	 * @param appliedCustomerBillingRate
+	 * @param taxIncludedAmount
+	 * @return boolean - if the process has been completed successfully or not (include the saving/updating data in TM Forum)
+	 */
+	private boolean executePayments(AppliedCustomerBillingRate appliedCustomerBillingRate, float taxIncludedAmount) {
 		
+		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
+			
+			String token = vcverifier.getVCVerifierToken();
+
+			if (token != null) {
+
+				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
+				String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c"; // for testing
+				
+				// TODO: set the list of params - default values for testing
+				String customerId = "1";
+				String customerOrganizationId = "1"; 
+				String invoiceId = "ab-132";
+				int productProviderId = 1; 
+				String currency = "EUR";
+				
+				PaymentStartNonInteractive paymentStartNonInteractive = payment.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
+				
+				// TODO - please take care of this comment
+				// these lines provide 2 actions: payment (paymentNonInteractive) + saving data (updateAppliedCustomerBillingRate)
+				// these 2 actions must be an atomic task
+				EGPayment egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
+																		   
+				if (egpayment != null) {
+					logger.debug("PaymentId: {}", egpayment.getPaymentId());
+					
+					//update AppliedCustomerBillingRate and save Payment in TMForum				
+					if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
+						logger.info("The overall payment process has been terminated with a successful");
+						return true;
+					} else {
+						logger.warn("Cannot saving/updating data in TM Forum");
+						//TODO => probably it must be foreseen the roll-back procedure!
+						return false;
+					}
+				}
+				
+			} else {
+				logger.warn("Token cannot be null");
+				return false;
+			}
+		}
+		return false;
+	}
+			
+	/**
+	 * 
+	 * @param applied
+	 * @return
+	 */
 	private boolean updateAppliedCustomerBillingRate(AppliedCustomerBillingRate applied) {
 		logger.info("Update the AppliedCustomerBillingRate for id: {}", applied.getId());		
 		
@@ -160,9 +226,30 @@ public class PaymentService implements InitializingBean {
 		}
 	}
 	
-	/*private List<AppliedCustomerBillingRate> aggregate(List<AppliedCustomerBillingRate> appliedList) {
-		logger.info("Aggregate feature");
-		//TODO implement aggregation feature ...
-		return appliedList;
-	}*/
+	private Map<String, List<AppliedCustomerBillingRate>> aggregate(List<AppliedCustomerBillingRate> appliedList) {
+		logger.info("Apply aggregate feature");
+		
+		Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<>();
+		
+		for (AppliedCustomerBillingRate appliedCustomerBillingRate : appliedList) {
+			if (!appliedCustomerBillingRate.getIsBilled()) { // not billed
+				
+				// grouping on the same endDateTime
+				OffsetDateTime endDateTime = appliedCustomerBillingRate.getPeriodCoverage().getEndDateTime();
+				
+				// key example => aggregate-period-2025-12-31
+				String keyPeriodEndDate = PREFIX_KEY + getEndDate(endDateTime);							
+				aggregates.computeIfAbsent(keyPeriodEndDate, k -> new ArrayList<>()).add(appliedCustomerBillingRate);
+			}
+		}
+
+		return aggregates;
+	}
+	
+	
+	private String getEndDate(OffsetDateTime date) {
+		String onlyDate = date.toLocalDate().toString();
+		logger.info("Only Date: {}", onlyDate);
+		return onlyDate;
+	}
 }
