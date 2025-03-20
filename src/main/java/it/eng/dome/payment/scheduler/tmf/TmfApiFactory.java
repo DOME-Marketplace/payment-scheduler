@@ -35,7 +35,7 @@ public final class TmfApiFactory implements InitializingBean {
 	@Value( "${tmforumapi.tmf678_billing_path}" )
 	private String tmf678CustomerBillPath;
 	
-	@Value( "${tmf637_inventory_path}" )
+	@Value( "${tmforumapi.tmf637_inventory_path}" )
 	private String tmf637ProductInventoryPath;
 	
 	
