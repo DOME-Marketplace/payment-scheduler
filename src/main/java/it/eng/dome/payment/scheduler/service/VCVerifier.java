@@ -73,11 +73,11 @@ public class VCVerifier {
 					logger.info("Access Token retrieved: {}", accessToken);
 					return accessToken;
 				} else {
-					logger.error("Access Token = null for the request {}", endpoint);
+					logger.error("Cannot found the access_token attribute from the response {}", response.getBody());
 					return null;
 				}
 			} else {
-				logger.error("Body null for the POST request to {}", endpoint);
+				logger.error("Response Body cannot be null making a POST call to {}", endpoint);
 				return null;
 			}
 		}

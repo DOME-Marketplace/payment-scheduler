@@ -42,28 +42,18 @@ public class StartPayment {
 		this.restTemplate = restTemplate;
 	}
 
-	public EGPayment paymentNonInteractive(String token, float amount) {
+	public EGPayment paymentNonInteractive(String token, PaymentStartNonInteractive payment) {
 		logger.debug("Start Non-Interactive payment");
-
-		// TODO prepare the payload for the payment
-		// TODO set the list of params
-		String customerId = "1";
-		String customerOrganizationId = "1"; 
-		String invoiceId = "ab-132";
-		int productProviderId = 1; 
-		String currency = "EUR";
-		String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c";
-
-		String payment = getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, amount, currency, paymentPreAuthorizationId);
 
 		String url = paymentBaseUrl + paymentStartNonInteractive;
 		logger.info("Payment request to URL: {}", url);
 
-		logger.debug("Payment payload to send EG APIs: {}", payment);
+		logger.debug("Payment payload to send EG APIs: {}", payment.toJson());
 
 		HttpHeaders headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		HttpEntity<String> request = new HttpEntity<>(payment, headers);
+		headers.set("Authorization", "Bearer " + token);
+		HttpEntity<String> request = new HttpEntity<>(payment.toJson(), headers);
 
 		JwtResponse response = restTemplate.postForObject(url, request, JwtResponse.class);
 		if (response.getResponseJwt() != null) {
@@ -88,7 +78,7 @@ public class StartPayment {
 	}
 
 
-	private String getPaymentStartNonInteractive(String customerId, String customerOrganizationId, String invoiceId, int productProviderId, float amount, String currency, String paymentPreAuthorizationId) {
+	public PaymentStartNonInteractive getPaymentStartNonInteractive(String customerId, String customerOrganizationId, String invoiceId, int productProviderId, float amount, String currency, String paymentPreAuthorizationId) {
 		
 		BaseAttributes baseAttributes = new BaseAttributes();
 		// TODO => how to set randomExternalId
@@ -120,7 +110,7 @@ public class StartPayment {
 		//TODO retrieve paymentPreAuthorizationId from product
 		paymentStartNonInteractive.setPaymentPreAuthorizationId(paymentPreAuthorizationId);
 
-		return paymentStartNonInteractive.toJson();
+		return paymentStartNonInteractive;
 	}
 	
 	private String decode(String s) {

@@ -14,6 +14,7 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPayment;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
@@ -81,7 +82,7 @@ public class PaymentService implements InitializingBean {
 			Map<String, List<AppliedCustomerBillingRate>> aggregates = aggregate(appliedList);
 
 			if (!aggregates.isEmpty()) {
-				logger.debug("Number of AppliedCustomerBillingRate aggregates found: {}", aggregates.size());
+				logger.debug("Number of AppliedCustomerBillingRate aggregates: {}", aggregates.size());
 								
 				for (Map.Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
 					
@@ -118,7 +119,7 @@ public class PaymentService implements InitializingBean {
 	 * 
 	 * @param appliedCustomerBillingRate
 	 * @param taxIncludedAmount
-	 * @return
+	 * @return boolean - if the process has been completed successfully or not (include the saving/updating data in TM Forum)
 	 */
 	private boolean executePayments(AppliedCustomerBillingRate appliedCustomerBillingRate, float taxIncludedAmount) {
 		
@@ -127,16 +128,35 @@ public class PaymentService implements InitializingBean {
 			String token = vcverifier.getVCVerifierToken();
 
 			if (token != null) {
+
+				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
+				String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c"; // for testing
 				
-				EGPayment egpayment = payment.paymentNonInteractive(token, taxIncludedAmount);
+				// TODO: set the list of params - default values for testing
+				String customerId = "1";
+				String customerOrganizationId = "1"; 
+				String invoiceId = "ab-132";
+				int productProviderId = 1; 
+				String currency = "EUR";
 				
+				PaymentStartNonInteractive paymentStartNonInteractive = payment.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
+				
+				// TODO - please take care of this comment
+				// these lines provide 2 actions: payment (paymentNonInteractive) + saving data (updateAppliedCustomerBillingRate)
+				// these 2 actions must be an atomic task
+				EGPayment egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
+																		   
 				if (egpayment != null) {
 					logger.debug("PaymentId: {}", egpayment.getPaymentId());
 					
 					//update AppliedCustomerBillingRate and save Payment in TMForum				
 					if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
-						logger.info("The payment process is terminated with a successful");
+						logger.info("The overall payment process has been terminated with a successful");
 						return true;
+					} else {
+						logger.warn("Cannot saving/updating data in TM Forum");
+						//TODO => probably it must be foreseen the roll-back procedure!
+						return false;
 					}
 				}
 				
@@ -148,6 +168,11 @@ public class PaymentService implements InitializingBean {
 		return false;
 	}
 			
+	/**
+	 * 
+	 * @param applied
+	 * @return
+	 */
 	private boolean updateAppliedCustomerBillingRate(AppliedCustomerBillingRate applied) {
 		logger.info("Update the AppliedCustomerBillingRate for id: {}", applied.getId());		
 		
