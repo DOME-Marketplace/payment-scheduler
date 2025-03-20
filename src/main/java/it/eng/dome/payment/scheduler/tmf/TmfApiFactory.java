@@ -39,8 +39,7 @@ public final class TmfApiFactory implements InitializingBean {
 	private String tmf637ProductInventoryPath;
 	
 	
-	private it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTmf678;
-	
+	private it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTmf678;	
 	private it.eng.dome.tmforum.tmf637.v4.ApiClient apiClientTmf637;
 	
 	
@@ -60,6 +59,24 @@ public final class TmfApiFactory implements InitializingBean {
 		return apiClientTmf678;
 	}
 
+	
+	public it.eng.dome.tmforum.tmf637.v4.ApiClient getTMF637ProductInventoryApiClient() {
+		if (apiClientTmf678 == null) { 
+			apiClientTmf637 = it.eng.dome.tmforum.tmf637.v4.Configuration.getDefaultApiClient();
+			if (tmfEnvoy) {
+				// usage of envoyProxy to access on TMForum APIs (i.e. tmfEndpoint = http://tm-forum-api-envoy.marketplace.svc.cluster.local:8080)
+				apiClientTmf637.setBasePath(tmfEndpoint + "/" + tmf637ProductInventoryPath);
+			}else {
+				// use direct access on specific TMForum APIs software		
+				// tmfEndpoint is the prefix and you must append to the URL (using '-' char) the specific software (i.e. product-inventory)
+				apiClientTmf637.setBasePath(tmfEndpoint + TMF_ENDPOINT_CONCAT_PATH + "product-inventory" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort);
+			}
+			logger.debug("Invoke Product Inventory API at endpoint: " + apiClientTmf637.getBasePath());
+		}
+		return apiClientTmf637;
+	}
+	
+	
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		logger.info("Payment Scheduler is using the following TMForum endpoint prefix: " + tmfEndpoint);
@@ -79,23 +96,12 @@ public final class TmfApiFactory implements InitializingBean {
 		if (tmf678CustomerBillPath.startsWith("/")) {
 			tmf678CustomerBillPath = removeInitialSlash(tmf678CustomerBillPath);
 		}
-
-	}
-	
-	public it.eng.dome.tmforum.tmf637.v4.ApiClient getTMF637ProductInventoryApiClient() {
-		final it.eng.dome.tmforum.tmf637.v4.ApiClient apiClient = it.eng.dome.tmforum.tmf637.v4.Configuration.getDefaultApiClient();
-		if (tmfEnvoy) {
-			// usage of envoyProxy to access on TMForum APIs (i.e. tmfEndpoint = http://tm-forum-api-envoy.marketplace.svc.cluster.local:8080)
-			apiClient.setBasePath(tmfEndpoint + "/" + tmf637ProductInventoryPath);
-		}else {
-			// use direct access on specific TMForum APIs software		
-			// tmfEndpoint is the prefix and you must append to the URL (using '-' char) the specific software (i.e. product-inventory)
-			apiClient.setBasePath(tmfEndpoint + TMF_ENDPOINT_CONCAT_PATH + "product-inventory" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort);
+		
+		if (tmf637ProductInventoryPath.startsWith("/")) {
+			tmf637ProductInventoryPath = removeInitialSlash(tmf637ProductInventoryPath);
 		}
-		logger.debug("Invoke Product Inventory API at endpoint: " + apiClientTmf637.getBasePath());
-		return apiClient;
-	}
 
+	}
 	
 	private String removeFinalSlash(String s) {
 		String path = s;

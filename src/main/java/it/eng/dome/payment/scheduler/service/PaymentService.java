@@ -21,7 +21,6 @@ import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.tmforum.tmf637.v4.api.ProductApi;
 import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf678.v4.ApiClient;
 import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
 import it.eng.dome.tmforum.tmf678.v4.api.CustomerBillExtensionApi;
@@ -48,18 +47,17 @@ public class PaymentService implements InitializingBean {
 	@Autowired
 	private StartPayment payment;
 	
-	@Autowired
-	private VCVerifier vcverifier;
+	//@Autowired
+	//private VCVerifier vcverifier;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		ApiClient apiClientTMF678 = tmfApiFactory.getTMF678CustomerBillApiClient();
+		it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTMF678 = tmfApiFactory.getTMF678CustomerBillApiClient();
 		appliedCustomerBillingRate = new AppliedCustomerBillingRateApi(apiClientTMF678);
 		customerBillExtension = new CustomerBillExtensionApi(apiClientTMF678);	
 		
 		it.eng.dome.tmforum.tmf637.v4.ApiClient apiClientTMF637 = tmfApiFactory.getTMF637ProductInventoryApiClient();
-		productInventory=new ProductApi(apiClientTMF637);
-	
+		productInventory = new ProductApi(apiClientTMF637);	
 	}
 	
 	/**
@@ -135,7 +133,7 @@ public class PaymentService implements InitializingBean {
 			
 			String token = "token-012345";//vcverifier.getVCVerifierToken();
 
-			if (token != null) {
+			//if (token != null) {
 
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
@@ -169,10 +167,10 @@ public class PaymentService implements InitializingBean {
 					}
 				}
 				
-			} else {
-				logger.warn("Token cannot be null");
-				return false;
-			}
+//			} else {
+//				logger.warn("Token cannot be null");
+//				return false;
+//			}
 		}
 		return false;
 	}
@@ -182,33 +180,33 @@ public class PaymentService implements InitializingBean {
 		logger.info("Start getting preauthorizationId...");
 		
 		// default
-		String paymentPreAuthorizationId="bae4cd08-1385-4e81-aa6a-260ac2954f1c";;
-		
-		if(productId==null) {
-			//TODO Exception 
+		String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c";
+
+		if (productId == null) {
+			// TODO Exception
 			logger.error("The productId is null..");
 		}
-		
-		//getProduct
+
+		// getProduct
 		try {
-			Product product=productInventory.retrieveProduct(productId, null);
-			
-			List<Characteristic> prodChars= product.getProductCharacteristic();
+			Product product = productInventory.retrieveProduct(productId, null);
+
+			List<Characteristic> prodChars = product.getProductCharacteristic();
 			// TODO Manage exception
-			if(prodChars!=null && !prodChars.isEmpty()) {
-				for(Characteristic c : prodChars) {
-					if(c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
-						paymentPreAuthorizationId=c.getValue().toString();
+			if (prodChars != null && !prodChars.isEmpty()) {
+				for (Characteristic c : prodChars) {
+					if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
+						paymentPreAuthorizationId = c.getValue().toString();
 						break;
 					}
 				}
 			}
-			
+
 		} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("Error {}", e.getMessage());
 		}
-		
+
 		return paymentPreAuthorizationId;
 	}
 			
