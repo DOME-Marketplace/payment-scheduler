@@ -130,7 +130,7 @@ public class PaymentService implements InitializingBean {
 			if (token != null) {
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
-				String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c"; // for testing
+				String paymentPreAuthorizationId = getPaymentPreAuthorizationId();
 				
 				// TODO: set the list of params - default values for testing
 				String customerId = "1";
@@ -138,7 +138,7 @@ public class PaymentService implements InitializingBean {
 				String invoiceId = "ab-132";
 				int productProviderId = 1; 
 				String currency = "EUR";
-				
+
 				PaymentStartNonInteractive paymentStartNonInteractive = payment.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
 				
 				// TODO - please take care of this comment
@@ -166,6 +166,15 @@ public class PaymentService implements InitializingBean {
 			}
 		}
 		return false;
+	}
+	
+	
+	private String getPaymentPreAuthorizationId() {
+
+		String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c"; // for testing
+		// TODO ??????????????
+//		appliedCustomerBillingRate.getProduct().getId()
+		return paymentPreAuthorizationId;
 	}
 			
 	/**
