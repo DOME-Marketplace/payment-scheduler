@@ -47,8 +47,8 @@ public class PaymentService implements InitializingBean {
 	@Autowired
 	private StartPayment payment;
 	
-	//@Autowired
-	//private VCVerifier vcverifier;
+	@Autowired
+	private VCVerifier vcverifier;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -131,9 +131,9 @@ public class PaymentService implements InitializingBean {
 		
 		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
 			
-			String token = "token-012345";//vcverifier.getVCVerifierToken();
+			String token = vcverifier.getVCVerifierToken();
 
-			//if (token != null) {
+			if (token != null) {
 
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
@@ -167,10 +167,10 @@ public class PaymentService implements InitializingBean {
 					}
 				}
 				
-//			} else {
-//				logger.warn("Token cannot be null");
-//				return false;
-//			}
+			} else {
+				logger.warn("Token cannot be null");
+				return false;
+			}
 		}
 		return false;
 	}
