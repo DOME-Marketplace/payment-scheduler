@@ -68,3 +68,4 @@ tmforumapi:
   tmf_port:  ${TMF_PORT:8080}
     
   tmf678_billing_path: tmf-api/customerBillManagement/v4
+  tmf637_inventory_path: tmf-api/productInventory/v4

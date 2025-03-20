@@ -18,6 +18,9 @@ import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPayment;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
+import it.eng.dome.tmforum.tmf637.v4.api.ProductApi;
+import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.ApiClient;
 import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
@@ -40,6 +43,7 @@ public class PaymentService implements InitializingBean {
 
 	private AppliedCustomerBillingRateApi appliedCustomerBillingRate;
 	private CustomerBillExtensionApi customerBillExtension;
+	private ProductApi productInventory;
 	
 	@Autowired
 	private StartPayment payment;
@@ -52,6 +56,10 @@ public class PaymentService implements InitializingBean {
 		ApiClient apiClientTMF678 = tmfApiFactory.getTMF678CustomerBillApiClient();
 		appliedCustomerBillingRate = new AppliedCustomerBillingRateApi(apiClientTMF678);
 		customerBillExtension = new CustomerBillExtensionApi(apiClientTMF678);	
+		
+		it.eng.dome.tmforum.tmf637.v4.ApiClient apiClientTMF637 = tmfApiFactory.getTMF637ProductInventoryApiClient();
+		productInventory=new ProductApi(apiClientTMF637);
+	
 	}
 	
 	/**
@@ -129,8 +137,9 @@ public class PaymentService implements InitializingBean {
 
 			if (token != null) {
 
+
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
-				String paymentPreAuthorizationId = getPaymentPreAuthorizationId();
+				String paymentPreAuthorizationId = getPaymentPreAuthorizationId(appliedCustomerBillingRate.getProduct().getId());
 				
 				// TODO: set the list of params - default values for testing
 				String customerId = "1";
@@ -169,11 +178,37 @@ public class PaymentService implements InitializingBean {
 	}
 	
 	
-	private String getPaymentPreAuthorizationId() {
-
-		String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c"; // for testing
-		// TODO ??????????????
-//		appliedCustomerBillingRate.getProduct().getId()
+	private String getPaymentPreAuthorizationId(String productId) {
+		logger.info("Start getting preauthorizationId...");
+		
+		// default
+		String paymentPreAuthorizationId="bae4cd08-1385-4e81-aa6a-260ac2954f1c";;
+		
+		if(productId==null) {
+			//TODO Exception 
+			logger.error("The productId is null..");
+		}
+		
+		//getProduct
+		try {
+			Product product=productInventory.retrieveProduct(productId, null);
+			
+			List<Characteristic> prodChars= product.getProductCharacteristic();
+			// TODO Manage exception
+			if(prodChars!=null && !prodChars.isEmpty()) {
+				for(Characteristic c : prodChars) {
+					if(c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
+						paymentPreAuthorizationId=c.getValue().toString();
+						break;
+					}
+				}
+			}
+			
+		} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 		return paymentPreAuthorizationId;
 	}
 			

@@ -35,7 +35,13 @@ public final class TmfApiFactory implements InitializingBean {
 	@Value( "${tmforumapi.tmf678_billing_path}" )
 	private String tmf678CustomerBillPath;
 	
+	@Value( "${tmf637_inventory_path}" )
+	private String tmf637ProductInventoryPath;
+	
+	
 	private it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTmf678;
+	
+	private it.eng.dome.tmforum.tmf637.v4.ApiClient apiClientTmf637;
 	
 	
 	public it.eng.dome.tmforum.tmf678.v4.ApiClient getTMF678CustomerBillApiClient() {
@@ -74,6 +80,20 @@ public final class TmfApiFactory implements InitializingBean {
 			tmf678CustomerBillPath = removeInitialSlash(tmf678CustomerBillPath);
 		}
 
+	}
+	
+	public it.eng.dome.tmforum.tmf637.v4.ApiClient getTMF637ProductInventoryApiClient() {
+		final it.eng.dome.tmforum.tmf637.v4.ApiClient apiClient = it.eng.dome.tmforum.tmf637.v4.Configuration.getDefaultApiClient();
+		if (tmfEnvoy) {
+			// usage of envoyProxy to access on TMForum APIs (i.e. tmfEndpoint = http://tm-forum-api-envoy.marketplace.svc.cluster.local:8080)
+			apiClient.setBasePath(tmfEndpoint + "/" + tmf637ProductInventoryPath);
+		}else {
+			// use direct access on specific TMForum APIs software		
+			// tmfEndpoint is the prefix and you must append to the URL (using '-' char) the specific software (i.e. product-inventory)
+			apiClient.setBasePath(tmfEndpoint + TMF_ENDPOINT_CONCAT_PATH + "product-inventory" + "." + tmfNamespace + "." + tmfPostfix + ":" + tmfPort);
+		}
+		logger.debug("Invoke Product Inventory API at endpoint: " + apiClientTmf637.getBasePath());
+		return apiClient;
 	}
 
 	

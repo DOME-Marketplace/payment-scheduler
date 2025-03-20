@@ -2,6 +2,10 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>0.0.8</code> :calendar: 20/03/2025
+**BugFixing**
+* Updated PaymentScheduler service to retrieve the `paymentPreAuthorizationId` from the product's characteristics.
+
 ### <code>0.0.7</code> :calendar: 19/03/2025
 **BugFixing**
 * Create `M2MTokenService` class to build the **client_assertion** for retrieving token from VC Verifier.
