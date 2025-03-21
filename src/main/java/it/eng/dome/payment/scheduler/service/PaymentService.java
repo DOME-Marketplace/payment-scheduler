@@ -82,8 +82,15 @@ public class PaymentService implements InitializingBean {
 			logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
 			
 			for (AppliedCustomerBillingRate acbr : appliedList) {
+				
+				logger.debug("Verify AppliedCustomerBillingRateId: {}", acbr.getId());
+				
+				logger.debug("Check if IsBilled: {}", acbr.getIsBilled());
+				
+				logger.debug("AppliedCustomerBillingRate payload: {}", acbr.toJson());
+				
 				if(!acbr.getIsBilled()) {
-					logger.debug("The acbr with ID: {} must to be billed",acbr.getId());
+					logger.debug("The acbr with ID: {} must be billed",acbr.getId());
 					executePayments(acbr, acbr.getTaxIncludedAmount().getValue());
 				}
 			}
