@@ -135,7 +135,6 @@ public class PaymentService implements InitializingBean {
 
 			if (token != null) {
 
-
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
 				String paymentPreAuthorizationId = getPaymentPreAuthorizationId(appliedCustomerBillingRate.getProduct().getId());
 				
@@ -274,6 +273,10 @@ public class PaymentService implements InitializingBean {
 		Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<>();
 		
 		for (AppliedCustomerBillingRate appliedCustomerBillingRate : appliedList) {
+			logger.debug("Verify appliedCustomerBillingRateId {}", appliedCustomerBillingRate.getId());
+
+			logger.debug("Check if isBilled: {}", appliedCustomerBillingRate.getIsBilled());
+			
 			if (!appliedCustomerBillingRate.getIsBilled()) { // not billed
 				
 				// grouping on the same endDateTime
