@@ -1,10 +1,7 @@
 package it.eng.dome.payment.scheduler.service;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +32,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 public class PaymentService implements InitializingBean {
 
 	private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
-	private final static String PREFIX_KEY = "aggregate-period-";
+	//private final static String PREFIX_KEY = "aggregate-period-";
 	
 	@Autowired
 	private TmfApiFactory tmfApiFactory;
@@ -47,8 +44,8 @@ public class PaymentService implements InitializingBean {
 	@Autowired
 	private StartPayment payment;
 	
-	//@Autowired
-	//private VCVerifier vcverifier;
+	@Autowired
+	private VCVerifier vcverifier;
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -84,34 +81,48 @@ public class PaymentService implements InitializingBean {
 		if (appliedList != null && !appliedList.isEmpty()) {
 			logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
 			
-			// apply aggregate feature
-			Map<String, List<AppliedCustomerBillingRate>> aggregates = aggregate(appliedList);
-
-			if (!aggregates.isEmpty()) {
-				logger.debug("Number of AppliedCustomerBillingRate aggregates: {}", aggregates.size());
-								
-				for (Map.Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
-					
-					String key = entry.getKey();
-					List<AppliedCustomerBillingRate> applied = entry.getValue();
-					logger.debug("Number of applied aggregate: {} - for {}", applied.size(), key);
-
-					float taxIncludedAmount = 0;
-					AppliedCustomerBillingRate appliedCustomerBillingRate = null;
-					for (AppliedCustomerBillingRate apply : applied) {
-						taxIncludedAmount = +apply.getTaxIncludedAmount().getValue();
-						if (appliedCustomerBillingRate == null) {
-							appliedCustomerBillingRate = apply;
-						}
-					}
-					
-					executePayments(appliedCustomerBillingRate, taxIncludedAmount);
-					num++;
-				}				
+			for (AppliedCustomerBillingRate acbr : appliedList) {
 				
-			} else {
-				logger.warn("List of AppliedCustomerBillingRate aggregate is empty");
+				logger.debug("Verify AppliedCustomerBillingRateId: {}", acbr.getId());
+				
+				logger.debug("Check if IsBilled: {}", acbr.getIsBilled());
+				
+				logger.debug("AppliedCustomerBillingRate payload: {}", acbr.toJson());
+				
+				if(!acbr.getIsBilled()) {
+					logger.debug("The acbr with ID: {} must be billed",acbr.getId());
+					executePayments(acbr, acbr.getTaxIncludedAmount().getValue());
+				}
 			}
+			
+			// apply aggregate feature
+			//Map<String, List<AppliedCustomerBillingRate>> aggregates = aggregate(appliedList);
+
+//			if (!aggregates.isEmpty()) {
+//				logger.debug("Number of AppliedCustomerBillingRate aggregates: {}", aggregates.size());
+//								
+//				for (Map.Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
+//					
+//					String key = entry.getKey();
+//					List<AppliedCustomerBillingRate> applied = entry.getValue();
+//					logger.debug("Number of applied aggregate: {} - for {}", applied.size(), key);
+//
+//					float taxIncludedAmount = 0;
+//					AppliedCustomerBillingRate appliedCustomerBillingRate = null;
+//					for (AppliedCustomerBillingRate apply : applied) {
+//						taxIncludedAmount = +apply.getTaxIncludedAmount().getValue();
+//						if (appliedCustomerBillingRate == null) {
+//							appliedCustomerBillingRate = apply;
+//						}
+//					}
+//					
+//					executePayments(appliedCustomerBillingRate, taxIncludedAmount);
+//					num++;
+//				}				
+//				
+//			} else {
+//				logger.warn("List of AppliedCustomerBillingRate aggregate is empty");
+//			}
 		}else {
 			logger.warn("List of AppliedCustomerBillingRate is empty");
 		}
@@ -128,13 +139,13 @@ public class PaymentService implements InitializingBean {
 	 * @return boolean - if the process has been completed successfully or not (include the saving/updating data in TM Forum)
 	 */
 	private boolean executePayments(AppliedCustomerBillingRate appliedCustomerBillingRate, float taxIncludedAmount) {
+		logger.info("Started payment for the acbr {} with taxIncludedAmount {}", appliedCustomerBillingRate.getId(),taxIncludedAmount);
 		
-		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
+		if ((appliedCustomerBillingRate != null)) {
 			
-			String token = "token-012345";//vcverifier.getVCVerifierToken();
+			String token = vcverifier.getVCVerifierToken();
 
-			//if (token != null) {
-
+			if (token != null) {
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
 				String paymentPreAuthorizationId = getPaymentPreAuthorizationId(appliedCustomerBillingRate.getProduct().getId());
@@ -167,10 +178,10 @@ public class PaymentService implements InitializingBean {
 					}
 				}
 				
-//			} else {
-//				logger.warn("Token cannot be null");
-//				return false;
-//			}
+			} else {
+				logger.warn("Token cannot be null");
+				return false;
+			}
 		}
 		return false;
 	}
@@ -268,12 +279,16 @@ public class PaymentService implements InitializingBean {
 		}
 	}
 	
-	private Map<String, List<AppliedCustomerBillingRate>> aggregate(List<AppliedCustomerBillingRate> appliedList) {
+	/*private Map<String, List<AppliedCustomerBillingRate>> aggregate(List<AppliedCustomerBillingRate> appliedList) {
 		logger.info("Apply aggregate feature");
 		
 		Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<>();
 		
 		for (AppliedCustomerBillingRate appliedCustomerBillingRate : appliedList) {
+			logger.debug("Verify appliedCustomerBillingRateId {}", appliedCustomerBillingRate.getId());
+
+			logger.debug("Check if isBilled: {}", appliedCustomerBillingRate.getIsBilled());
+			
 			if (!appliedCustomerBillingRate.getIsBilled()) { // not billed
 				
 				// grouping on the same endDateTime
@@ -286,12 +301,12 @@ public class PaymentService implements InitializingBean {
 		}
 
 		return aggregates;
-	}
+	}*/
 	
 	
-	private String getEndDate(OffsetDateTime date) {
+	/*private String getEndDate(OffsetDateTime date) {
 		String onlyDate = date.toLocalDate().toString();
 		logger.info("Only Date: {}", onlyDate);
 		return onlyDate;
-	}
+	}*/
 }
