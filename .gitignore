@@ -1,0 +1,21 @@
+##############################
+## Maven
+##############################
+/target/
+/target/*
+
+##############################
+## Eclipse
+##############################
+.settings/
+bin/
+tmp/
+.metadata
+.classpath
+.project
+*.tmp
+*.bak
+*.swp
+*~.nib
+/.private-key
+/.lear-credential-machine

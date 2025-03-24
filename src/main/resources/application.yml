@@ -1,0 +1,71 @@
+
+# Spring Configuration
+server: 
+  port: 8480
+  servlet:
+    context-path:  ${BILLING_PREFIX:/}
+
+application:
+  name: "@project.artifactId@"
+
+build: 
+  version: "@project.version@"
+  timestamp: "@timestamp@"
+
+# Scheduling Task Configuration  
+scheduling:
+  cron: "0 0 4,16 * * ?" 
+
+# Logging Configuration
+logging:
+#  file:
+#    name: application.log
+  level:
+    it.eng.dome: ${LOG_LEVEL:DEBUG}
+    org.apache.coyote.http11: ERROR
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%-5level] %logger{36} - %msg%n" 
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Spring Boot Actuator
+management:
+  server:
+    port: 9004
+  endpoints:
+    enabled-by-default: false
+    web:
+      exposure:
+        include: "*"
+      base-path: /
+      path-mapping:
+        health: health
+  endpoint:
+    health:
+      enabled: true
+      show-details: never
+  health:
+    probes:
+      enabled: true
+
+# Payment Service
+payment:
+  payment_base_url: ${PAYMENT_BASE_URL:https://dpas-sbx.egroup.hu/api}
+  payment_start_non_interactive: ${PAYMENT_START_NON_INTERACTIVE:/payment-start-non-interactive}
+
+# VC Verifier credential
+vc_verifier:
+  endpoint: https://verifier.dome-marketplace-sbx.org/oidc/token
+  lear_credential: ${LEAR_CREDENTIAL_BASE64}
+  private_key: ${PRIVATE_KEY_BASE64}
+
+tmforumapi:
+  tmf_endpoint: ${TMF_ENDPOINT:http://tm-forum-api}
+   
+  tmf_envoy:  ${TMF_ENVOY:false}
+  # valid only if envoy false
+  tmf_namespace:  ${TMF_NAMESPACE:marketplace}
+  tmf_postfix:  ${TMF_POSTFIX:svc.cluster.local}
+  tmf_port:  ${TMF_PORT:8080}
+    
+  tmf678_billing_path: tmf-api/customerBillManagement/v4
+  tmf637_inventory_path: tmf-api/productInventory/v4
