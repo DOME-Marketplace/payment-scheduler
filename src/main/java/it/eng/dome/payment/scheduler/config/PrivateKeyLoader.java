@@ -28,12 +28,11 @@ public class PrivateKeyLoader {
 				privateKey = new String(Files.readAllBytes(Paths.get(PRIVATE_KEY_PATH)), StandardCharsets.UTF_8).trim();
 				logger.debug("Loaded PrivateKey from file: {}", PRIVATE_KEY_PATH);
 			}else {
-				logger.debug("Loaded PrivateKey ENV_VAR: {}", ENV_VAR_NAME);
+				logger.debug("Loaded PrivateKey via ENV_VAR: {}", ENV_VAR_NAME);
 			}
 			
 		} catch (IOException e) {
-			logger.error("Error to load privateKey: {}", e.getMessage());
-			//throw new RuntimeException("Error to load privateKey", e);
+			logger.error("Error loading privateKey: {}", e.getMessage());
 		}
 	}
 

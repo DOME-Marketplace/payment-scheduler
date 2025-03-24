@@ -140,7 +140,12 @@ public class M2MTokenService {
 	}
 	
 	private String generateJWT(String payload, String clientId) throws Exception {
-		String hexPrivateKey = privateKey.getPrivateKey();
+
+		String base64String = privateKey.getPrivateKey();
+		logger.info("TEST1: {}", base64String);
+		byte[] decodedBytes = Base64.getDecoder().decode(base64String);
+		String hexPrivateKey = bytesToHex(decodedBytes);
+		logger.info("TEST2: {}", hexPrivateKey);
       
 		try {
 
@@ -224,4 +229,11 @@ public class M2MTokenService {
         return new String(vcTokenDecoded).replaceAll("\\r|\\n", "");
     }
 
+	private String bytesToHex(byte[] bytes) {
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : bytes) {
+            hexString.append(String.format("%02X", b)); 
+        }
+        return hexString.toString();
+    }
 }

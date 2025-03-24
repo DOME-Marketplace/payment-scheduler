@@ -28,11 +28,11 @@ public class LearCredentialMachineLoader {
 				learCredentialMachine = new String(Files.readAllBytes(Paths.get(LEAR_CREDENTIAL_PATH)), StandardCharsets.UTF_8).trim();
 				logger.debug("Loaded LearCredentialMachine from file: {}", LEAR_CREDENTIAL_PATH);
 			}else {
-				logger.debug("Loaded LearCredentialMachine ENV_VAR: {}", ENV_VAR_NAME);
+				logger.debug("Loaded LearCredentialMachine via ENV_VAR: {}", ENV_VAR_NAME);
 			}
 			
 		} catch (IOException e) {
-			logger.error("Error to load LearCredentialMachine: {}", e.getMessage());
+			logger.error("Error loading LearCredentialMachine: {}", e.getMessage());
 		}
 	}
 

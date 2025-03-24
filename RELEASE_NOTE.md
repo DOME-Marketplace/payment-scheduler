@@ -2,6 +2,11 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>0.0.8</code> :calendar: 23/03/2025
+**Feature**
+* Create **kubernetes secret** (sealed-secret) and set `env var` to be used a run-time.
+
+
 ### <code>0.0.7</code> :calendar: 19/03/2025
 **BugFixing**
 * Create `M2MTokenService` class to build the **client_assertion** for retrieving token from VC Verifier.

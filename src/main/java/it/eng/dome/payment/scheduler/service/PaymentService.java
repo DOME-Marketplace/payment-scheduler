@@ -35,7 +35,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 public class PaymentService implements InitializingBean {
 
 	private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
-	private final static String PREFIX_KEY = "aggregate-period-";
+	//private final static String PREFIX_KEY = "aggregate-period-";
 	
 	@Autowired
 	private TmfApiFactory tmfApiFactory;
@@ -46,10 +46,10 @@ public class PaymentService implements InitializingBean {
 	
 	@Autowired
 	private StartPayment payment;
-	
-	//@Autowired
-	//private VCVerifier vcverifier;
 
+	@Autowired
+	private VCVerifier vcverifier;
+	
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTMF678 = tmfApiFactory.getTMF678CustomerBillApiClient();
@@ -68,7 +68,7 @@ public class PaymentService implements InitializingBean {
 	public void payments() throws ApiException {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
-		List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, null);
+		List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, 1000);
 		executePayments(appliedList);
 	}
 	
@@ -84,6 +84,21 @@ public class PaymentService implements InitializingBean {
 		if (appliedList != null && !appliedList.isEmpty()) {
 			logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
 			
+			for (AppliedCustomerBillingRate acbr : appliedList) {
+				
+				logger.debug("Verify AppliedCustomerBillingRateId: {}", acbr.getId());
+				
+				logger.debug("Check if IsBilled: {}", acbr.getIsBilled());
+				
+				logger.debug("AppliedCustomerBillingRate payload: {}", acbr.toJson());
+				
+				if(!acbr.getIsBilled()) {
+					logger.debug("The acbr with ID: {} must be billed",acbr.getId());
+					executePayments(acbr, acbr.getTaxIncludedAmount().getValue());
+				}
+			}
+			
+			/*
 			// apply aggregate feature
 			Map<String, List<AppliedCustomerBillingRate>> aggregates = aggregate(appliedList);
 
@@ -112,6 +127,7 @@ public class PaymentService implements InitializingBean {
 			} else {
 				logger.warn("List of AppliedCustomerBillingRate aggregate is empty");
 			}
+			*/
 		}else {
 			logger.warn("List of AppliedCustomerBillingRate is empty");
 		}
@@ -131,7 +147,8 @@ public class PaymentService implements InitializingBean {
 		
 		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
 			
-			String token = "token-012345";//vcverifier.getVCVerifierToken();
+			String token = vcverifier.getVCVerifierToken();
+			logger.info("Token: {}", token);
 
 			//if (token != null) {
 
@@ -139,31 +156,34 @@ public class PaymentService implements InitializingBean {
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
 				String paymentPreAuthorizationId = getPaymentPreAuthorizationId(appliedCustomerBillingRate.getProduct().getId());
 				
-				// TODO: set the list of params - default values for testing
-				String customerId = "1";
-				String customerOrganizationId = "1"; 
-				String invoiceId = "ab-132";
-				int productProviderId = 1; 
-				String currency = "EUR";
-
-				PaymentStartNonInteractive paymentStartNonInteractive = payment.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
-				
-				// TODO - please take care of this comment
-				// these lines provide 2 actions: payment (paymentNonInteractive) + saving data (updateAppliedCustomerBillingRate)
-				// these 2 actions must be an atomic task
-				EGPayment egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
-																		   
-				if (egpayment != null) {
-					logger.debug("PaymentId: {}", egpayment.getPaymentId());
+				if (paymentPreAuthorizationId != null) {
 					
-					//update AppliedCustomerBillingRate and save Payment in TMForum				
-					if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
-						logger.info("The overall payment process has been terminated with a successful");
-						return true;
-					} else {
-						logger.warn("Cannot saving/updating data in TM Forum");
-						//TODO => probably it must be foreseen the roll-back procedure!
-						return false;
+					// TODO: set the list of params - default values for testing
+					String customerId = "1";
+					String customerOrganizationId = "1"; 
+					String invoiceId = "ab-132";
+					int productProviderId = 1; 
+					String currency = "EUR";
+
+					PaymentStartNonInteractive paymentStartNonInteractive = payment.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
+					
+					// TODO - please take care of this comment
+					// these lines provide 2 actions: payment (paymentNonInteractive) + saving data (updateAppliedCustomerBillingRate)
+					// these 2 actions must be an atomic task
+					EGPayment egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
+																			   
+					if (egpayment != null) {
+						logger.debug("PaymentId: {}", egpayment.getPaymentId());
+						
+						//update AppliedCustomerBillingRate and save Payment in TMForum				
+						if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
+							logger.info("The overall payment process has been terminated with a successful");
+							return true;
+						} else {
+							logger.warn("Cannot saving/updating data in TM Forum");
+							//TODO => probably it must be foreseen the roll-back procedure!
+							return false;
+						}
 					}
 				}
 				
@@ -267,7 +287,7 @@ public class PaymentService implements InitializingBean {
 			return null;
 		}
 	}
-	
+	/*
 	private Map<String, List<AppliedCustomerBillingRate>> aggregate(List<AppliedCustomerBillingRate> appliedList) {
 		logger.info("Apply aggregate feature");
 		
@@ -293,5 +313,5 @@ public class PaymentService implements InitializingBean {
 		String onlyDate = date.toLocalDate().toString();
 		logger.info("Only Date: {}", onlyDate);
 		return onlyDate;
-	}
+	}*/
 }

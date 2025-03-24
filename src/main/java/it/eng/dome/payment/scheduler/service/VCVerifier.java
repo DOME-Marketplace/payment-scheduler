@@ -75,13 +75,13 @@ public class VCVerifier {
 					return accessToken;
 				} else {
 					logger.error("Cannot found the access_token attribute from the response {}", response.getBody());
-					return null;
+					return "TOKEN_NULL";
 				}
 			} else {
 				logger.error("Response Body cannot be null making a POST call to {}", endpoint);
-				return null;
+				return "BODY_NULL";
 			}
 		}
-		return null;
+		return "NULL";
 	}
 }
