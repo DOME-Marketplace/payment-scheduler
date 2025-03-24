@@ -61,7 +61,7 @@ vc_verifier:
 tmforumapi:
   tmf_endpoint: ${TMF_ENDPOINT:http://tm-forum-api}
    
-  tmf_envoy:  ${TMF_ENVOY:false}
+  tmf_envoy:  ${TMF_ENVOY:true}
   # valid only if envoy false
   tmf_namespace:  ${TMF_NAMESPACE:marketplace}
   tmf_postfix:  ${TMF_POSTFIX:svc.cluster.local}
