@@ -43,6 +43,8 @@ public class VCVerifier {
 		logger.info("Get token from VC Verifier at URL: {}", endpoint);
 		
 		String learCredential = learCredentialMachine.getLearCredentialMachine();
+		logger.debug("LEAR Credential: {}", learCredential);
+		
 		Map<String, String> map = m2mTokenService.getAssertion(learCredential);
 				
 		if (map != null && !map.isEmpty()) {
