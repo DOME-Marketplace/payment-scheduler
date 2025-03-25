@@ -1,10 +1,7 @@
 package it.eng.dome.payment.scheduler.service;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,17 +81,17 @@ public class PaymentService implements InitializingBean {
 		if (appliedList != null && !appliedList.isEmpty()) {
 			logger.debug("Number of AppliedCustomerBillingRate found: {}", appliedList.size());
 			
-			for (AppliedCustomerBillingRate acbr : appliedList) {
+			for (AppliedCustomerBillingRate applied : appliedList) {
 				
-				logger.debug("Verify AppliedCustomerBillingRateId: {}", acbr.getId());
+				logger.debug("Verify AppliedCustomerBillingRateId: {}", applied.getId());
 				
-				logger.debug("Check if IsBilled: {}", acbr.getIsBilled());
+				logger.debug("Check if IsBilled: {}", applied.getIsBilled());
 				
-				logger.debug("AppliedCustomerBillingRate payload: {}", acbr.toJson());
+				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
 				
-				if(!acbr.getIsBilled()) {
-					logger.debug("The acbr with ID: {} must be billed",acbr.getId());
-					executePayments(acbr, acbr.getTaxIncludedAmount().getValue());
+				if(!applied.getIsBilled()) {
+					logger.debug("The acbr with ID: {} must be billed",applied.getId());
+					executePayments(applied, applied.getTaxIncludedAmount().getValue());
 				}
 			}
 			
@@ -148,13 +145,14 @@ public class PaymentService implements InitializingBean {
 		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
 			
 			String token = vcverifier.getVCVerifierToken();
-			logger.info("Token: {}", token);
+			logger.info("TEST TOKEN: {}", token);
 
 			//if (token != null) {
 
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
 				String paymentPreAuthorizationId = getPaymentPreAuthorizationId(appliedCustomerBillingRate.getProduct().getId());
+				logger.info("PaymentPreAuthorizationId: {}", paymentPreAuthorizationId);
 				
 				if (paymentPreAuthorizationId != null) {
 					
@@ -165,6 +163,7 @@ public class PaymentService implements InitializingBean {
 					int productProviderId = 1; 
 					String currency = "EUR";
 
+					// Get payload PaymentStartNonInteractive
 					PaymentStartNonInteractive paymentStartNonInteractive = payment.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
 					
 					// TODO - please take care of this comment
