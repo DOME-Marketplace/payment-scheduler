@@ -15,7 +15,7 @@ public class LearCredentialMachineLoader {
 	private static final String LEAR_CREDENTIAL_PATH = ".lear-credential-machine";
 	private static final String ENV_VAR_NAME = "LEAR_CREDENTIAL_BASE64"; 
 	
-	private static final Logger logger = LoggerFactory.getLogger(PrivateKeyLoader.class);
+	private static final Logger logger = LoggerFactory.getLogger(LearCredentialMachineLoader.class);
 	
 	private String learCredentialMachine;
 
