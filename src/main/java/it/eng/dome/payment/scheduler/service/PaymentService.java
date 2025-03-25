@@ -204,26 +204,31 @@ public class PaymentService implements InitializingBean {
 		if (productId == null) {
 			// TODO Exception
 			logger.error("The productId is null..");
-		}
+		}else {
 
-		// getProduct
-		try {
-			Product product = productInventory.retrieveProduct(productId, null);
-
-			List<Characteristic> prodChars = product.getProductCharacteristic();
-			// TODO Manage exception
-			if (prodChars != null && !prodChars.isEmpty()) {
-				for (Characteristic c : prodChars) {
-					if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
-						paymentPreAuthorizationId = c.getValue().toString();
-						break;
+			// getProduct
+			try {
+				if (productInventory != null) {
+					Product product = productInventory.retrieveProduct(productId, null);
+		
+					if (product != null) {
+					
+						List<Characteristic> prodChars = product.getProductCharacteristic();
+						// TODO Manage exception
+						if (prodChars != null && !prodChars.isEmpty()) {
+							for (Characteristic c : prodChars) {
+								if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
+									paymentPreAuthorizationId = c.getValue().toString();
+									break;
+								}
+							}
+						}
 					}
 				}
+			} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
+				// TODO Auto-generated catch block
+				logger.error("Error {}", e.getMessage());
 			}
-
-		} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
-			// TODO Auto-generated catch block
-			logger.error("Error {}", e.getMessage());
 		}
 
 		return paymentPreAuthorizationId;
