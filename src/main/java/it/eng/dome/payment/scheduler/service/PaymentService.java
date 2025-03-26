@@ -207,8 +207,10 @@ public class PaymentService implements InitializingBean {
 		}else {
 
 			// getProduct
+			logger.info("ProductId is {}", productId);
 			try {
 				if (productInventory != null) {
+					
 					Product product = productInventory.retrieveProduct(productId, null);
 		
 					if (product != null) {

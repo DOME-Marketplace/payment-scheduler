@@ -68,7 +68,7 @@ public class M2MTokenService {
 	
 	public String createClientAssertion(String learCredential) {
 		
-		String jwtCredential = learCredential.replaceAll("\\r|\\n", ""); // getVCinJWTDecodedFromBase64(learCredential);
+		String jwtCredential = getVCinJWTDecodedFromBase64(learCredential);
 		logger.info("JwtCredential: {}", jwtCredential);
 		
 		try {
@@ -223,12 +223,12 @@ public class M2MTokenService {
 			return null;
 		}
 	}
-/*	
+	
 	private String getVCinJWTDecodedFromBase64(String vcTokenBase64) {        
         byte[] vcTokenDecoded = Base64.getDecoder().decode(vcTokenBase64);
         return new String(vcTokenDecoded).replaceAll("\\r|\\n", "");
     }
-*/
+
 	private String bytesToHex(byte[] bytes) {
         StringBuilder hexString = new StringBuilder();
         for (byte b : bytes) {
