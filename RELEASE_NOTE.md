@@ -2,6 +2,11 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>0.0.9</code> :calendar: 26/03/2025
+**BugFixing**
+* Set **kubernetes secret** (sealed-secret) properly **encoded** for `LEAR_CREDENTIAL_BASE64` and `PRIVATE_KEY_BASE64`.
+
+
 ### <code>0.0.8</code> :calendar: 23/03/2025
 **Feature**
 * Create **kubernetes secret** (sealed-secret) and set `env var` to be used a run-time.

@@ -87,6 +87,7 @@ public final class TmfApiFactory implements InitializingBean {
 		}
 
 		Assert.state(!StringUtils.isBlank(tmfEndpoint),	"Payment Scheduler not properly configured. tmf_endpoint property has no value.");
+		Assert.state(!StringUtils.isBlank(tmf637ProductInventoryPath), "Payment Scheduler not properly configured. The tmf637_inventory_path property has no value.");
 		Assert.state(!StringUtils.isBlank(tmf678CustomerBillPath), "Payment Scheduler not properly configured. The tmf678_billing_path property has no value.");
 
 		if (tmfEndpoint.endsWith("/")) {
