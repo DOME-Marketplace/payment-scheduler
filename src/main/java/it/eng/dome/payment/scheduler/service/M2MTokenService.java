@@ -142,10 +142,10 @@ public class M2MTokenService {
 	private String generateJWT(String payload, String clientId) throws Exception {
 
 		String base64String = privateKey.getPrivateKey();
-		logger.info("TEST1: {}", base64String);
+		logger.info("TEST1 Key: {}", base64String);
 		byte[] decodedBytes = Base64.getDecoder().decode(base64String);
 		String hexPrivateKey = bytesToHex(decodedBytes);
-		logger.info("TEST2: {}", hexPrivateKey);
+		logger.info("TEST2 key: {}", hexPrivateKey);
       
 		try {
 
