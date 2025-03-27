@@ -83,14 +83,11 @@ public class PaymentService implements InitializingBean {
 			
 			for (AppliedCustomerBillingRate applied : appliedList) {
 				
-				logger.debug("Verify AppliedCustomerBillingRateId: {}", applied.getId());
-				
-				logger.debug("Check if IsBilled: {}", applied.getIsBilled());
-				
+				logger.info("Verify AppliedCustomerBillingRateId: {}", applied.getId());
 				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
 				
 				if(!applied.getIsBilled()) {
-					logger.debug("The acbr with ID: {} must be billed",applied.getId());
+					logger.debug("The acbr with ID: {} must be billed", applied.getId());
 					executePayments(applied, applied.getTaxIncludedAmount().getValue());
 				}
 			}
@@ -145,14 +142,14 @@ public class PaymentService implements InitializingBean {
 		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
 			
 			String token = vcverifier.getVCVerifierToken();
-			logger.info("TEST TOKEN: {}", token);
+			logger.debug("Token: {}", token);
 
 			//if (token != null) {
 
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
 				String paymentPreAuthorizationId = getPaymentPreAuthorizationId(appliedCustomerBillingRate.getProduct().getId());
-				logger.info("PaymentPreAuthorizationId: {}", paymentPreAuthorizationId);
+				logger.info("PaymentPreAuthorizationId used: {}", paymentPreAuthorizationId);
 				
 				if (paymentPreAuthorizationId != null) {
 					
@@ -196,7 +193,7 @@ public class PaymentService implements InitializingBean {
 	
 	
 	private String getPaymentPreAuthorizationId(String productId) {
-		logger.info("Start getting preauthorizationId...");
+		logger.info("Start getting PreAuthorizationId ...");
 		
 		// default
 		String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c";
@@ -204,26 +201,38 @@ public class PaymentService implements InitializingBean {
 		if (productId == null) {
 			// TODO Exception
 			logger.error("The productId is null..");
-		}
+		}else {
 
-		// getProduct
-		try {
-			Product product = productInventory.retrieveProduct(productId, null);
+			// getProduct
+			logger.debug("ProductId is {}", productId);
+			try {
+				if (productInventory != null) {
+					
+					Product product = productInventory.retrieveProduct(productId, null);
+		
+					if (product != null) {
+						logger.info("Product: {}", product.toJson());
+						
+						List<Characteristic> prodChars = product.getProductCharacteristic();
 
-			List<Characteristic> prodChars = product.getProductCharacteristic();
-			// TODO Manage exception
-			if (prodChars != null && !prodChars.isEmpty()) {
-				for (Characteristic c : prodChars) {
-					if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
-						paymentPreAuthorizationId = c.getValue().toString();
-						break;
+						// TODO Manage exception
+						if (prodChars != null && !prodChars.isEmpty()) {
+							for (Characteristic c : prodChars) {
+								if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
+									paymentPreAuthorizationId = c.getValue().toString();
+									logger.info("Found the paymentPreAuthorizationId: {}", paymentPreAuthorizationId);
+									break;
+								}
+							}
+						}
+						
 					}
 				}
+			} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
+				// TODO Auto-generated catch block
+				logger.error("Error {}", e.getMessage());
+				return paymentPreAuthorizationId;
 			}
-
-		} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
-			// TODO Auto-generated catch block
-			logger.error("Error {}", e.getMessage());
 		}
 
 		return paymentPreAuthorizationId;

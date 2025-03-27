@@ -23,7 +23,7 @@ import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 @Component
 public class VCVerifier {
 
-	private static final Logger logger = LoggerFactory.getLogger(StartPayment.class);
+	private static final Logger logger = LoggerFactory.getLogger(VCVerifier.class);
 	private final RestTemplate restTemplate;
 	private LearCredentialMachineLoader learCredentialMachine;
 
@@ -43,6 +43,8 @@ public class VCVerifier {
 		logger.info("Get token from VC Verifier at URL: {}", endpoint);
 		
 		String learCredential = learCredentialMachine.getLearCredentialMachine();
+		//logger.debug("LEAR Credential: {}", learCredential);
+		
 		Map<String, String> map = m2mTokenService.getAssertion(learCredential);
 				
 		if (map != null && !map.isEmpty()) {
@@ -51,8 +53,8 @@ public class VCVerifier {
 			String client_assertion_type = M2MTokenUtils.CLIENT_ASSERTION_TYPE;
 			String client_id = map.get(M2MTokenUtils.CLIENT_ID);
 			
-			logger.debug("client_id: {}", client_id);
-			logger.debug("client_assertion: {}", client_assertion);
+			//logger.debug("client_id: {}", client_id);
+			//logger.debug("client_assertion: {}", client_assertion);
 			
 			// prepare the header
 			HttpHeaders headers = new HttpHeaders();
@@ -71,17 +73,17 @@ public class VCVerifier {
 			if (response.getBody() != null) {
 				String accessToken = response.getBody().getAccess_token();
 				if (accessToken != null) {
-					logger.info("Access Token retrieved: {}", accessToken);
+					logger.info("Access Token retrieved with successful");
 					return accessToken;
 				} else {
 					logger.error("Cannot found the access_token attribute from the response {}", response.getBody());
-					return "TOKEN_NULL";
+					return null;
 				}
 			} else {
 				logger.error("Response Body cannot be null making a POST call to {}", endpoint);
-				return "BODY_NULL";
+				return null;
 			}
 		}
-		return "NULL";
+		return null;
 	}
 }

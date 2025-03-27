@@ -2,6 +2,13 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>0.0.9</code> :calendar: 27/03/2025
+**BugFixing**
+* Set **kubernetes secret** (sealed-secret) properly **encoded** for `LEAR_CREDENTIAL_BASE64` and `PRIVATE_KEY_BASE64`.
+* Use **lear-credential-machine** provided by Dome ticket in base64 format, and encode it. Use this encoded in the plain-secret.yaml (`LEAR_CREDENTIAL_BASE64`) to create sealed-secret with `kubeseal`. 
+* Use **private-key provided** by crypto generator in hex format. Convert it in Base64, and encode it. Use it in the plain-secret.yaml (`PRIVATE_KEY_BASE64`) to create sealed-secret with `kubeseal`. 
+
+
 ### <code>0.0.8</code> :calendar: 23/03/2025
 **Feature**
 * Create **kubernetes secret** (sealed-secret) and set `env var` to be used a run-time.

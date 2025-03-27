@@ -12,7 +12,7 @@
 		
 	<groupId>it.eng.dome.payment</groupId>
 	<artifactId>scheduler</artifactId>
-	<version>0.0.8</version>
+	<version>0.0.9</version>
 	<name>Payment Scheduler</name>
 	<description>Payment Scheduler for DOME project</description>
 	
@@ -67,7 +67,12 @@
 			<artifactId>tmf678-v4</artifactId>
 			<version>2.0.0</version>
 		</dependency>
-
+		<!--  TMF637 Product Inventory Management  -->
+		<dependency>
+			<groupId>it.eng.dome.tmforum-sdk</groupId>
+			<artifactId>tmf637-v4</artifactId>
+			<version>2.0.0</version>
+		</dependency>
 		<!-- Auth0 -->
 		<dependency>
 			<groupId>com.auth0</groupId>

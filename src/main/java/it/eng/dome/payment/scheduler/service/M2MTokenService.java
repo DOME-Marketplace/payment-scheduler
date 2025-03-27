@@ -56,9 +56,10 @@ public class M2MTokenService {
 		Map<String, String> map = new HashMap<String, String>();
 		
 		String clientAssertion = createClientAssertion(learCredential);
-		logger.info("clientAssertion: {}", clientAssertion);
+		//logger.info("clientAssertion: {}", clientAssertion);
 		
 		if (clientAssertion != null && clientId != null) {
+			logger.info("Retrieved clientId and clientAssertion");
 			map.put(M2MTokenUtils.CLIENT_ASSERTION, clientAssertion);
 			map.put(M2MTokenUtils.CLIENT_ID, clientId);
 		}
@@ -69,14 +70,14 @@ public class M2MTokenService {
 	public String createClientAssertion(String learCredential) {
 		
 		String jwtCredential = getVCinJWTDecodedFromBase64(learCredential);
-		logger.info("JwtCredential: {}", jwtCredential);
+		//logger.info("JwtCredential: {}", jwtCredential);
 		
 		try {
 			SignedJWT signedJWT = SignedJWT.parse(jwtCredential);
 			Payload vcMachinePayload = signedJWT.getPayload();
 			clientId = (String) vcMachinePayload.toJSONObject().get("sub");
 
-			logger.info("Get clientId : {}", clientId);
+			logger.info("Get clientId: {}", clientId);
 			
 			Instant issueTime = Instant.now();
 			long iat = issueTime.toEpochMilli();
@@ -86,11 +87,11 @@ public class M2MTokenService {
 			).toEpochMilli();
 			
 			String vpTokenJWTString = createVPTokenJWT(jwtCredential, clientId, iat, exp);
-			logger.info("Get VPTokenJWT : {}", vpTokenJWTString);
+			//logger.info("Get VPTokenJWT : {}", vpTokenJWTString);
 			
 			//ADD: encode vp_token
 			String vp_token = Base64.getEncoder().encodeToString(vpTokenJWTString.getBytes());
-			logger.info("Encode vp_token : {}", vpTokenJWTString);
+			//logger.info("Encode vp_token : {}", vpTokenJWTString);
 			
 			 Payload payload = new Payload(Map.of(
 	                "sub", clientId,
@@ -102,7 +103,7 @@ public class M2MTokenService {
 	                "vp_token", vp_token
 	        ));
 			 
-			logger.info("Payload VP : {}", payload.toString());
+			//logger.info("Payload VP : {}", payload.toString());
 			 
 			return generateJWT(payload.toString(), clientId);
 			
@@ -125,7 +126,7 @@ public class M2MTokenService {
                 "vp", vp
         ));
 
-        logger.info("Payload of VPTokenJWT: {}", payload.toString());        
+        //logger.info("Payload of VPTokenJWT: {}", payload.toString());        
         return generateJWT(payload.toString(), clientId);
 	 }
 	
@@ -142,10 +143,8 @@ public class M2MTokenService {
 	private String generateJWT(String payload, String clientId) throws Exception {
 
 		String base64String = privateKey.getPrivateKey();
-		logger.info("TEST1: {}", base64String);
 		byte[] decodedBytes = Base64.getDecoder().decode(base64String);
 		String hexPrivateKey = bytesToHex(decodedBytes);
-		logger.info("TEST2: {}", hexPrivateKey);
       
 		try {
 
