@@ -145,7 +145,7 @@ public class PaymentService implements InitializingBean {
 		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
 			
 			String token = vcverifier.getVCVerifierToken();
-			logger.info("TEST TOKEN: {}", token);
+			logger.info("Token: {}", token);
 
 			//if (token != null) {
 
@@ -230,6 +230,7 @@ public class PaymentService implements InitializingBean {
 			} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
 				// TODO Auto-generated catch block
 				logger.error("Error {}", e.getMessage());
+				return paymentPreAuthorizationId;
 			}
 		}
 

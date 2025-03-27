@@ -73,17 +73,17 @@ public class VCVerifier {
 			if (response.getBody() != null) {
 				String accessToken = response.getBody().getAccess_token();
 				if (accessToken != null) {
-					logger.info("Access Token retrieved: {}", accessToken);
+					logger.info("Access Token retrieved with successful");
 					return accessToken;
 				} else {
 					logger.error("Cannot found the access_token attribute from the response {}", response.getBody());
-					return "TOKEN_NULL";
+					return null;
 				}
 			} else {
 				logger.error("Response Body cannot be null making a POST call to {}", endpoint);
-				return "BODY_NULL";
+				return null;
 			}
 		}
-		return "NULL";
+		return null;
 	}
 }
