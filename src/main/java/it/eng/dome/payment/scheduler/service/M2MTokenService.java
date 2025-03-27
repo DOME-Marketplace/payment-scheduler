@@ -77,7 +77,7 @@ public class M2MTokenService {
 			Payload vcMachinePayload = signedJWT.getPayload();
 			clientId = (String) vcMachinePayload.toJSONObject().get("sub");
 
-			logger.info("Get clientId : {}", clientId);
+			logger.info("Get clientId: {}", clientId);
 			
 			Instant issueTime = Instant.now();
 			long iat = issueTime.toEpochMilli();
@@ -126,7 +126,7 @@ public class M2MTokenService {
                 "vp", vp
         ));
 
-        logger.info("Payload of VPTokenJWT: {}", payload.toString());        
+        //logger.info("Payload of VPTokenJWT: {}", payload.toString());        
         return generateJWT(payload.toString(), clientId);
 	 }
 	

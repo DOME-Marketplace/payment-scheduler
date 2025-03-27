@@ -83,14 +83,11 @@ public class PaymentService implements InitializingBean {
 			
 			for (AppliedCustomerBillingRate applied : appliedList) {
 				
-				logger.debug("Verify AppliedCustomerBillingRateId: {}", applied.getId());
-				
-				logger.debug("Check if IsBilled: {}", applied.getIsBilled());
-				
+				logger.info("Verify AppliedCustomerBillingRateId: {}", applied.getId());
 				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
 				
 				if(!applied.getIsBilled()) {
-					logger.debug("The acbr with ID: {} must be billed",applied.getId());
+					logger.debug("The acbr with ID: {} must be billed", applied.getId());
 					executePayments(applied, applied.getTaxIncludedAmount().getValue());
 				}
 			}
@@ -145,14 +142,14 @@ public class PaymentService implements InitializingBean {
 		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
 			
 			String token = vcverifier.getVCVerifierToken();
-			logger.info("Token: {}", token);
+			logger.debug("Token: {}", token);
 
 			//if (token != null) {
 
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
 				String paymentPreAuthorizationId = getPaymentPreAuthorizationId(appliedCustomerBillingRate.getProduct().getId());
-				logger.info("PaymentPreAuthorizationId: {}", paymentPreAuthorizationId);
+				logger.info("PaymentPreAuthorizationId used: {}", paymentPreAuthorizationId);
 				
 				if (paymentPreAuthorizationId != null) {
 					
@@ -196,7 +193,7 @@ public class PaymentService implements InitializingBean {
 	
 	
 	private String getPaymentPreAuthorizationId(String productId) {
-		logger.info("Start getting preauthorizationId...");
+		logger.info("Start getting PreAuthorizationId ...");
 		
 		// default
 		String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c";
@@ -207,7 +204,7 @@ public class PaymentService implements InitializingBean {
 		}else {
 
 			// getProduct
-			logger.info("ProductId is {}", productId);
+			logger.debug("ProductId is {}", productId);
 			try {
 				if (productInventory != null) {
 					
@@ -217,12 +214,13 @@ public class PaymentService implements InitializingBean {
 						logger.info("Product: {}", product.toJson());
 						
 						List<Characteristic> prodChars = product.getProductCharacteristic();
-						logger.info("ProductCharacteristic: {}", prodChars);
+
 						// TODO Manage exception
 						if (prodChars != null && !prodChars.isEmpty()) {
 							for (Characteristic c : prodChars) {
 								if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
 									paymentPreAuthorizationId = c.getValue().toString();
+									logger.info("Found the paymentPreAuthorizationId: {}", paymentPreAuthorizationId);
 									break;
 								}
 							}
