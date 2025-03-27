@@ -214,8 +214,10 @@ public class PaymentService implements InitializingBean {
 					Product product = productInventory.retrieveProduct(productId, null);
 		
 					if (product != null) {
-					
+						logger.info("Product: {}", product.toJson());
+						
 						List<Characteristic> prodChars = product.getProductCharacteristic();
+						logger.info("ProductCharacteristic: {}", prodChars);
 						// TODO Manage exception
 						if (prodChars != null && !prodChars.isEmpty()) {
 							for (Characteristic c : prodChars) {
@@ -225,6 +227,7 @@ public class PaymentService implements InitializingBean {
 								}
 							}
 						}
+						
 					}
 				}
 			} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
