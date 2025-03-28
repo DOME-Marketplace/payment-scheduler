@@ -16,7 +16,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
-import it.eng.dome.payment.scheduler.model.EGPayment;
+import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
 import it.eng.dome.payment.scheduler.model.JwtResponse;
 
 @Component
@@ -35,7 +35,7 @@ public class StartPayment {
 		this.restTemplate = restTemplate;
 	}
 
-	public EGPayment paymentNonInteractive(String token, PaymentStartNonInteractive payment) {
+	public EGPaymentResponse paymentNonInteractive(String token, PaymentStartNonInteractive payment) {
 		logger.debug("Start Non-Interactive payment");
 
 		String url = paymentBaseUrl + paymentStartNonInteractive;
@@ -56,10 +56,10 @@ public class StartPayment {
 				ObjectMapper objectMapper = new ObjectMapper();
 				DecodedJWT jwt = JWT.decode(responseJwt);
 				logger.debug("Payload: {}", jwt.getPayload());
-				logger.info("paymentId: {}", jwt.getClaim("paymentId").asString());
-				logger.info("paymentPreAuthorizationId: {}", jwt.getClaim("paymentPreAuthorizationId").asString());
+				logger.info("paymentExternalId: {}", jwt.getClaim("paymentExternalId").asString());
+				logger.info("paymentPreAuthorizationExternalId: {}", jwt.getClaim("paymentPreAuthorizationExternalId").asString());
 				
-				return objectMapper.readValue(decode(jwt.getPayload()), EGPayment.class);
+				return objectMapper.readValue(decode(jwt.getPayload()), EGPaymentResponse.class);
 			} catch (Exception e) {
 				logger.error(e.getMessage());
 				return null;

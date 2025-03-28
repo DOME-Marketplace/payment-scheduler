@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
-import it.eng.dome.payment.scheduler.model.EGPayment;
+import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
@@ -167,10 +167,10 @@ public class PaymentService implements InitializingBean {
 					// TODO - please take care of this comment
 					// these lines provide 2 actions: payment (paymentNonInteractive) + saving data (updateAppliedCustomerBillingRate)
 					// these 2 actions must be an atomic task
-					EGPayment egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
+					EGPaymentResponse egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
 																			   
 					if (egpayment != null) {
-						logger.debug("PaymentId: {}", egpayment.getPaymentId());
+						logger.debug("PaymentExternalId: {}", egpayment.getPaymentExternalId());
 						
 						//update AppliedCustomerBillingRate and save Payment in TMForum				
 						if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
