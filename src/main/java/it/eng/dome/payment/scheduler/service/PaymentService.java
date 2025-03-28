@@ -67,7 +67,7 @@ public class PaymentService implements InitializingBean {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
 		List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, 1000);
-		executePayments(appliedList);
+		payments(appliedList);
 	}
 	
 	/**
@@ -76,7 +76,7 @@ public class PaymentService implements InitializingBean {
 	 * @param appliedList
 	 * @return String - provide the number of payments 
 	 */
-	public String executePayments(List<AppliedCustomerBillingRate> appliedList) {
+	public String payments(List<AppliedCustomerBillingRate> appliedList) {
 		int num = 0;
 		
 		if (appliedList != null && !appliedList.isEmpty()) {

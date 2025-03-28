@@ -34,7 +34,7 @@ public class PaymentSchedulerController {
 		AppliedCustomerBillingRate[] appliedCustomerBillingRates = JSON.getGson().fromJson(applied,	AppliedCustomerBillingRate[].class);
 		logger.info("Number of AppliedCustomerBillingRates received: {}", appliedCustomerBillingRates.length);
 
-		String response = paymentService.executePayments(Arrays.asList(appliedCustomerBillingRates));
+		String response = paymentService.payments(Arrays.asList(appliedCustomerBillingRates));
 		return new ResponseEntity<String>(response, HttpStatus.OK);
 	}
 
