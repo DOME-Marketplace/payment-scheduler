@@ -2,6 +2,10 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>0.0.9a</code> :calendar: xx/03/2025
+**BugFixing**
+* Change EG Payload adding `External` prefix.
+
 ### <code>0.0.9</code> :calendar: 27/03/2025
 **BugFixing**
 * Set **kubernetes secret** (sealed-secret) properly **encoded** for `LEAR_CREDENTIAL_BASE64` and `PRIVATE_KEY_BASE64`.
