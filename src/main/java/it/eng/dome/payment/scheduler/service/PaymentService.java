@@ -149,8 +149,8 @@ public class PaymentService implements InitializingBean {
 
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
-				String paymentPreAuthorizationId = getPaymentPreAuthorizationId(appliedCustomerBillingRate.getProduct().getId());
-				logger.info("PaymentPreAuthorizationId used: {}", paymentPreAuthorizationId);
+				String paymentPreAuthorizationId = getPaymentPreAuthorizationExternalId(appliedCustomerBillingRate.getProduct().getId());
+				logger.info("PaymentPreAuthorizationExternalId used: {}", paymentPreAuthorizationId);
 				
 				if (paymentPreAuthorizationId != null) {
 					
@@ -158,11 +158,11 @@ public class PaymentService implements InitializingBean {
 					String customerId = "1";
 					String customerOrganizationId = "1"; 
 					String invoiceId = "ab-132";
-					int productProviderId = 1; 
+					String productProviderExternalId = "eda11ca9-cf3b-420d-8570-9d3ecf3613ac"; 
 					String currency = "EUR";
 
 					// Get payload PaymentStartNonInteractive
-					PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
+					PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderExternalId, taxIncludedAmount, currency, paymentPreAuthorizationId);
 					
 					// TODO - please take care of this comment
 					// these lines provide 2 actions: payment (paymentNonInteractive) + saving data (updateAppliedCustomerBillingRate)
@@ -193,11 +193,11 @@ public class PaymentService implements InitializingBean {
 	}
 	
 	
-	private String getPaymentPreAuthorizationId(String productId) {
-		logger.info("Start getting PreAuthorizationId ...");
+	private String getPaymentPreAuthorizationExternalId(String productId) {
+		logger.info("Start getting PreAuthorizationExternalId ...");
 		
-		// default
-		String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c";
+		// default -> became paymentPreAuthorizationExternalId
+		String paymentPreAuthorizationExternalId = "9d4fca3b-4bfa-4dba-a09f-348b8d504e44";
 
 		if (productId == null) {
 			// TODO Exception
@@ -219,9 +219,9 @@ public class PaymentService implements InitializingBean {
 						// TODO Manage exception
 						if (prodChars != null && !prodChars.isEmpty()) {
 							for (Characteristic c : prodChars) {
-								if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationId")) {
-									paymentPreAuthorizationId = c.getValue().toString();
-									logger.info("Found the paymentPreAuthorizationId: {}", paymentPreAuthorizationId);
+								if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationExternalId")) {
+									paymentPreAuthorizationExternalId = c.getValue().toString();
+									logger.info("Found the paymentPreAuthorizationId: {}", paymentPreAuthorizationExternalId);
 									break;
 								}
 							}
@@ -232,11 +232,11 @@ public class PaymentService implements InitializingBean {
 			} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
 				// TODO Auto-generated catch block
 				logger.error("Error {}", e.getMessage());
-				return paymentPreAuthorizationId;
+				return paymentPreAuthorizationExternalId;
 			}
 		}
 
-		return paymentPreAuthorizationId;
+		return paymentPreAuthorizationExternalId;
 	}
 			
 	/**

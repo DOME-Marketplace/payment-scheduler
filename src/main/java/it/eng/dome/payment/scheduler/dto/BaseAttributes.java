@@ -65,18 +65,19 @@ public class BaseAttributes {
 
 	public class PaymentItem {
 
-		private int productProviderId;
+		private String productProviderExternalId;
 		private float amount;
 		private String currency;
 		private boolean recurring;
 		private Map<String, String> productProviderSpecificData;
 
-		public int getProductProviderId() {
-			return productProviderId;
+		
+		public String getProductProviderExternalId() {
+			return productProviderExternalId;
 		}
 
-		public void setProductProviderId(int productProviderId) {
-			this.productProviderId = productProviderId;
+		public void setProductProviderExternalId(String productProviderExternalId) {
+			this.productProviderExternalId = productProviderExternalId;
 		}
 
 		public float getAmount() {

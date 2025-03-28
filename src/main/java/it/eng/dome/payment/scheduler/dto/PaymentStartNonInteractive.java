@@ -5,16 +5,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class PaymentStartNonInteractive {
 
-	private String paymentPreAuthorizationId;
+	private String paymentPreAuthorizationExternalId;
 	private BaseAttributes baseAttributes; 
 	
-	public String getPaymentPreAuthorizationId() {
-		return paymentPreAuthorizationId;
+
+	public String getPaymentPreAuthorizationExternalId() {
+		return paymentPreAuthorizationExternalId;
 	}
-	
-	public void setPaymentPreAuthorizationId(String paymentPreAuthorizationId) {
-		this.paymentPreAuthorizationId = paymentPreAuthorizationId;
+
+	public void setPaymentPreAuthorizationExternalId(String paymentPreAuthorizationExternalId) {
+		this.paymentPreAuthorizationExternalId = paymentPreAuthorizationExternalId;
 	}
+
 	public BaseAttributes getBaseAttributes() {
 		return baseAttributes;
 	}

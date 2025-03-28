@@ -40,11 +40,8 @@ public class EGPayment {
 
 	public static class Payout {
 
-		@JsonProperty("state")
-		private String state;
-
-		@JsonProperty("productProviderId")
-		private int productProviderId;
+		@JsonProperty("productProviderExternalId")
+		private String productProviderExternalId;
 
 		@JsonProperty("gatewayId")
 		private int gatewayId;
@@ -55,20 +52,13 @@ public class EGPayment {
 		@JsonProperty("currency")
 		private String currency;
 
-		public String getState() {
-			return state;
+
+		public String getProviderExternalId() {
+			return productProviderExternalId;
 		}
 
-		public void setState(String state) {
-			this.state = state;
-		}
-
-		public int getProductProviderId() {
-			return productProviderId;
-		}
-
-		public void setProductProviderId(int productProviderId) {
-			this.productProviderId = productProviderId;
+		public void setProviderExternalId(String productProviderExternalId) {
+			this.productProviderExternalId = productProviderExternalId;
 		}
 
 		public int getGatewayId() {

@@ -12,7 +12,7 @@ import it.eng.dome.payment.scheduler.dto.BaseAttributes.PaymentItem;
 
 public class PaymentStartNonInteractiveUtils {
 
-public static PaymentStartNonInteractive getPaymentStartNonInteractive(String customerId, String customerOrganizationId, String invoiceId, int productProviderId, float amount, String currency, String paymentPreAuthorizationId) {
+public static PaymentStartNonInteractive getPaymentStartNonInteractive(String customerId, String customerOrganizationId, String invoiceId, String productProviderExternalId, float amount, String currency, String paymentPreAuthorizationExternalId) {
 		
 		BaseAttributes baseAttributes = new BaseAttributes();
 		// TODO => how to set randomExternalId
@@ -23,7 +23,7 @@ public static PaymentStartNonInteractive getPaymentStartNonInteractive(String cu
 		baseAttributes.setInvoiceId(invoiceId);
 
 		PaymentItem paymentItem = baseAttributes.new PaymentItem();
-		paymentItem.setProductProviderId(productProviderId);
+		paymentItem.setProductProviderExternalId(productProviderExternalId);
 		paymentItem.setAmount(amount);
 		paymentItem.setCurrency(currency);
 		
@@ -41,7 +41,7 @@ public static PaymentStartNonInteractive getPaymentStartNonInteractive(String cu
 
 		PaymentStartNonInteractive paymentStartNonInteractive = new PaymentStartNonInteractive();
 		paymentStartNonInteractive.setBaseAttributes(baseAttributes);
-		paymentStartNonInteractive.setPaymentPreAuthorizationId(paymentPreAuthorizationId);
+		paymentStartNonInteractive.setPaymentPreAuthorizationExternalId(paymentPreAuthorizationExternalId);
 
 		return paymentStartNonInteractive;
 	}

@@ -10,13 +10,13 @@ public class TestPayment {
 		String customerId = "1";
 		String customerOrganizationId = "1"; 
 		String invoiceId = "ab-132";
-		int productProviderId = 1; 
+		String productProviderExternalId = "eda11ca9-cf3b-420d-8570-9d3ecf3613ac"; 
 		String currency = "EUR";
 		
-		String paymentPreAuthorizationId = "bae4cd08-1385-4e81-aa6a-260ac2954f1c";
+		String paymentPreAuthorizationExternalId = "9d4fca3b-4bfa-4dba-a09f-348b8d504e44";
 		float taxIncludedAmount = 10;
 
-		PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
+		PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderExternalId, taxIncludedAmount, currency, paymentPreAuthorizationExternalId);
 
 		System.out.println(paymentStartNonInteractive.toJson());
 	}
