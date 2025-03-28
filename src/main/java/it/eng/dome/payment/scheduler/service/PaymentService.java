@@ -143,7 +143,7 @@ public class PaymentService implements InitializingBean {
 		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
 			
 			String token = vcverifier.getVCVerifierToken();
-			logger.debug("Token: {}", token);
+			//logger.debug("Token: {}", token);
 
 			//if (token != null) {
 

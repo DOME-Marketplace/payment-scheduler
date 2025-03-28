@@ -48,10 +48,10 @@ public class EGPaymentResponse {
 		private String productProviderExternalId;
 
 		@JsonProperty("gatewayExternalId")
-		private int gatewayExternalId;
+		private String gatewayExternalId;
 
 		@JsonProperty("amount")
-		private int amount;
+		private float amount;
 
 		@JsonProperty("currency")
 		private String currency;
@@ -72,19 +72,19 @@ public class EGPaymentResponse {
 			this.productProviderExternalId = productProviderExternalId;
 		}
 
-		public int getGatewayExternalId() {
+		public String getGatewayExternalId() {
 			return gatewayExternalId;
 		}
 
-		public void setGatewayExternalId(int gatewayExternalId) {
+		public void setGatewayExternalId(String gatewayExternalId) {
 			this.gatewayExternalId = gatewayExternalId;
 		}
 
-		public int getAmount() {
+		public float getAmount() {
 			return amount;
 		}
 
-		public void setAmount(int amount) {
+		public void setAmount(float amount) {
 			this.amount = amount;
 		}
 
