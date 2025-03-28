@@ -15,6 +15,7 @@ import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPayment;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
+import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
 import it.eng.dome.tmforum.tmf637.v4.api.ProductApi;
 import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
@@ -161,7 +162,7 @@ public class PaymentService implements InitializingBean {
 					String currency = "EUR";
 
 					// Get payload PaymentStartNonInteractive
-					PaymentStartNonInteractive paymentStartNonInteractive = payment.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
+					PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderId, taxIncludedAmount, currency, paymentPreAuthorizationId);
 					
 					// TODO - please take care of this comment
 					// these lines provide 2 actions: payment (paymentNonInteractive) + saving data (updateAppliedCustomerBillingRate)
