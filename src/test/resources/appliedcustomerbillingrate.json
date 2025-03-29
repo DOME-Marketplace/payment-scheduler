@@ -1,0 +1,366 @@
+[
+	{
+       "id": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b40",
+	   "href": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b40",
+	   "date": "2024-12-12T10:36:39.687299018Z",
+	   "name": "My first bill created with TMForum",
+	   "description":"Billing for test 1",
+	   "isBilled": false,
+	   "type": "recurringCharge",
+	   "appliedTax":[
+	      {
+	         "taxCategory":"VAT",
+	         "taxRate":23.0,
+	         "taxAmount":{
+	            "unit":"EUR",
+	            "value":10.0
+	         }
+	      }
+	   ],   
+	   "bill": {
+	       "id": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513",
+	       "href": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513"   
+	   },
+	   "billingAccount":{
+	      "id":"urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "href": "urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "name":"My Billing Account"
+	   },
+	   "characteristic": [
+	    {
+	      "name": "my char",
+	      "valueType": "type",
+	      "value": "test"
+	    }
+	   ],
+	   "periodCoverage": {
+	       "endDateTime":"2025-12-12T15:18:52.065849400Z",
+	       "startDateTime":"2024-12-12T15:18:52.065849400Z"
+	    },
+	   "product":{
+	      "id":"urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "href": "urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "name": "New Product Example"
+	   },
+	   "taxIncludedAmount":{
+	      "unit":"EUR",
+	      "value":21.0
+	   },
+	   "taxExcludedAmount":{
+	      "unit":"EUR",
+	      "value":23.0
+	   }
+	},
+	{
+	   "id": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b41",
+	   "href": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b41",
+	   "date": "2024-12-12T10:36:39.687299018Z",
+	   "name": "My second bill created with TMForum",
+	   "description":"Billing for test 2",
+	   "isBilled": false,
+	   "type": "recurringCharge",
+	   "appliedTax":[
+	      {
+	         "taxCategory":"VAT",
+	         "taxRate":2.0,
+	         "taxAmount":{
+	            "unit":"EUR",
+	            "value":5.0
+	         }
+	      }
+	   ],   
+	   "bill": {
+	       "id": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513",
+	       "href": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513"   
+	   },
+	   "billingAccount":{
+	      "id":"urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "href": "urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "name":"My Billing Account"
+	   },
+	   "characteristic": [
+	    {
+	      "name": "my char",
+	      "valueType": "type",
+	      "value": "test"
+	    }
+	   ],
+	   "periodCoverage": {
+	       "endDateTime":"2025-12-12T15:18:52.065849400Z",
+	       "startDateTime":"2024-12-12T15:18:52.065849400Z"
+	    },
+	   "product":{
+	      "id":"urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "href": "urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "name": "New Product Example"
+	   },
+	   "taxIncludedAmount":{
+	      "unit":"EUR",
+	      "value":1.0
+	   },
+	   "taxExcludedAmount":{
+	      "unit":"EUR",
+	      "value":5.0
+	   }
+	},
+	{
+	   "id": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b42",
+	   "href": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b42",
+	   "date": "2024-12-12T10:36:39.687299018Z",
+	   "name": "My third bill created with TMForum",
+	   "description":"Billing for test 3",
+	   "isBilled": false,
+	   "type": "recurringCharge",
+	   "appliedTax":[
+	      {
+	         "taxCategory":"VAT",
+	         "taxRate":11.0,
+	         "taxAmount":{
+	            "unit":"EUR",
+	            "value":13.0
+	         }
+	      }
+	   ],   
+	   "bill": {
+	       "id": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513",
+	       "href": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513"   
+	   },
+	   "billingAccount":{
+	      "id":"urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "href": "urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "name":"My Billing Account"
+	   },
+	   "characteristic": [
+	    {
+	      "name": "my char",
+	      "valueType": "type",
+	      "value": "test"
+	    }
+	   ],
+	   "periodCoverage": {
+	       "endDateTime":"2025-12-12T15:18:52.065849400Z",
+	       "startDateTime":"2024-12-12T15:18:52.065849400Z"
+	    },
+	   "product":{
+	      "id":"urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "href": "urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "name": "New Product Example"
+	   },
+	   "taxIncludedAmount":{
+	      "unit":"EUR",
+	      "value":14.0
+	   },
+	   "taxExcludedAmount":{
+	      "unit":"EUR",
+	      "value":16.0
+	   }
+	},
+	{
+	   "id": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b43",
+	   "href": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b43",
+	   "date": "2024-12-12T10:36:39.687299018Z",
+	   "name": "My fourty bill created with TMForum",
+	   "description":"Billing for test 4",
+	   "isBilled": false,
+	   "type": "recurringCharge",
+	   "appliedTax":[
+	      {
+	         "taxCategory":"VAT",
+	         "taxRate":23.0,
+	         "taxAmount":{
+	            "unit":"EUR",
+	            "value":10.0
+	         }
+	      }
+	   ],   
+	   "bill": {
+	       "id": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513",
+	       "href": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513"   
+	   },
+	   "billingAccount":{
+	      "id":"urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "href": "urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "name":"My Billing Account"
+	   },
+	   "characteristic": [
+	    {
+	      "name": "my char",
+	      "valueType": "type",
+	      "value": "test"
+	    }
+	   ],
+	   "periodCoverage": {
+	       "endDateTime":"2025-12-12T15:18:52.065849400Z",
+	       "startDateTime":"2024-12-12T15:18:52.065849400Z"
+	    },
+	   "product":{
+	      "id":"urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "href": "urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "name": "New Product Example"
+	   },
+	   "taxIncludedAmount":{
+	      "unit":"EUR",
+	      "value":21.0
+	   },
+	   "taxExcludedAmount":{
+	      "unit":"EUR",
+	      "value":23.0
+	   }
+	},
+	{
+	   "id": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b44",
+	   "href": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b44",
+	   "date": "2024-12-12T10:36:39.687299018Z",
+	   "name": "My fifty bill created with TMForum",
+	   "description":"Billing for test 5",
+	   "isBilled": false,
+	   "type": "recurringCharge",
+	   "appliedTax":[
+	      {
+	         "taxCategory":"VAT",
+	         "taxRate":23.0,
+	         "taxAmount":{
+	            "unit":"EUR",
+	            "value":10.0
+	         }
+	      }
+	   ],   
+	   "bill": {
+	       "id": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513",
+	       "href": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513"   
+	   },
+	   "billingAccount":{
+	      "id":"urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "href": "urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "name":"My Billing Account"
+	   },
+	   "characteristic": [
+	    {
+	      "name": "my char",
+	      "valueType": "type",
+	      "value": "test"
+	    }
+	   ],
+	   "periodCoverage": {
+	       "endDateTime":"2025-12-12T15:18:52.065849400Z",
+	       "startDateTime":"2024-12-12T15:18:52.065849400Z"
+	    },
+	   "product":{
+	      "id":"urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "href": "urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "name": "New Product Example"
+	   },
+	   "taxIncludedAmount":{
+	      "unit":"EUR",
+	      "value":21.0
+	   },
+	   "taxExcludedAmount":{
+	      "unit":"EUR",
+	      "value":23.0
+	   }
+	},
+	{
+	   "id": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b45",
+	   "href": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b45",
+	   "date": "2024-12-12T10:36:39.687299018Z",
+	   "name": "My sixty bill created with TMForum",
+	   "description":"Billing for test 6",
+	   "isBilled": false,
+	   "type": "recurringCharge",
+	   "appliedTax":[
+	      {
+	         "taxCategory":"VAT",
+	         "taxRate":23.0,
+	         "taxAmount":{
+	            "unit":"EUR",
+	            "value":10.0
+	         }
+	      }
+	   ],   
+	   "bill": {
+	       "id": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513",
+	       "href": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513"   
+	   },
+	   "billingAccount":{
+	      "id":"urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "href": "urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "name":"My Billing Account"
+	   },
+	   "characteristic": [
+	    {
+	      "name": "my char",
+	      "valueType": "type",
+	      "value": "test"
+	    }
+	   ],
+	   "periodCoverage": {
+	       "endDateTime":"2025-12-12T15:18:52.065849400Z",
+	       "startDateTime":"2024-12-12T15:18:52.065849400Z"
+	    },
+	   "product":{
+	      "id":"urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "href": "urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "name": "New Product Example"
+	   },
+	   "taxIncludedAmount":{
+	      "unit":"EUR",
+	      "value":21.0
+	   },
+	   "taxExcludedAmount":{
+	      "unit":"EUR",
+	      "value":23.0
+	   }
+	},
+	{
+	   "id": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b46",
+	   "href": "urn:ngsi-ld:applied-customer-billing-rate:3c72b46d-4aed-461e-b967-69abf3531b46",
+	   "date": "2024-12-12T10:36:39.687299018Z",
+	   "name": "My seventy bill created with TMForum",
+	   "description":"Billing for test 7",
+	   "isBilled": false,
+	   "type": "recurringCharge",
+	   "appliedTax":[
+	      {
+	         "taxCategory":"VAT",
+	         "taxRate":23.0,
+	         "taxAmount":{
+	            "unit":"EUR",
+	            "value":10.0
+	         }
+	      }
+	   ],   
+	   "bill": {
+	       "id": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513",
+	       "href": "urn:ngsi-ld:customer-bill:5ac35058-d722-4fef-809b-b3e63f9a0513"   
+	   },
+	   "billingAccount":{
+	      "id":"urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "href": "urn:ngsi-ld:billing-account:3dc56c89-8acc-4600-b4aa-21f4c3eb7497",
+	      "name":"My Billing Account"
+	   },
+	   "characteristic": [
+	    {
+	      "name": "my char",
+	      "valueType": "type",
+	      "value": "test"
+	    }
+	   ],
+	   "periodCoverage": {
+	       "endDateTime":"2025-12-12T15:18:52.065849400Z",
+	       "startDateTime":"2024-12-12T15:18:52.065849400Z"
+	    },
+	   "product":{
+	      "id":"urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "href": "urn:ngsi-ld:product:51abe945-9f26-44f7-9985-8214e2a57235",
+	      "name": "New Product Example"
+	   },
+	   "taxIncludedAmount":{
+	      "unit":"EUR",
+	      "value":21.0
+	   },
+	   "taxExcludedAmount":{
+	      "unit":"EUR",
+	      "value":23.0
+	   }
+	}
+]
