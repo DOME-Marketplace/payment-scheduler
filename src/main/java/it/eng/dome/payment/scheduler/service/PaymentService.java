@@ -2,6 +2,7 @@ package it.eng.dome.payment.scheduler.service;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,21 +12,19 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
-import it.eng.dome.tmforum.tmf637.v4.api.ProductApi;
 import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf678.v4.ApiException;
-import it.eng.dome.tmforum.tmf678.v4.api.AppliedCustomerBillingRateApi;
-import it.eng.dome.tmforum.tmf678.v4.api.CustomerBillExtensionApi;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateUpdate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 
 @Component(value = "paymentService")
@@ -37,25 +36,21 @@ public class PaymentService implements InitializingBean {
 	
 	@Autowired
 	private TmfApiFactory tmfApiFactory;
-
-	private AppliedCustomerBillingRateApi appliedCustomerBillingRate;
-	private CustomerBillExtensionApi customerBillExtension;
-	private ProductApi productInventory;
 	
 	@Autowired
 	private StartPayment payment;
 
 	@Autowired
 	private VCVerifier vcverifier;
+
+
+	private AppliedCustomerBillRateApis appliedApi;
+	private ProductApis productApi;
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		it.eng.dome.tmforum.tmf678.v4.ApiClient apiClientTMF678 = tmfApiFactory.getTMF678CustomerBillApiClient();
-		appliedCustomerBillingRate = new AppliedCustomerBillingRateApi(apiClientTMF678);
-		customerBillExtension = new CustomerBillExtensionApi(apiClientTMF678);	
-		
-		it.eng.dome.tmforum.tmf637.v4.ApiClient apiClientTMF637 = tmfApiFactory.getTMF637ProductInventoryApiClient();
-		productInventory = new ProductApi(apiClientTMF637);	
+		appliedApi = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
+		productApi = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
 	}
 	
 	/**
@@ -65,8 +60,8 @@ public class PaymentService implements InitializingBean {
 	 */
 	public void payments() throws ApiException {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
-		
-		List<AppliedCustomerBillingRate> appliedList = appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, null, 1000);
+
+		List<AppliedCustomerBillingRate> appliedList = appliedApi.getAllAppliedCustomerBillingRates(null);
 		payments(appliedList);
 	}
 	
@@ -82,16 +77,38 @@ public class PaymentService implements InitializingBean {
 		if (appliedList != null && !appliedList.isEmpty()) {
 			logger.debug("Total number of AppliedCustomerBillingRate found: {}", appliedList.size());
 			
+			// filtered appliedList isBilled
+			List<AppliedCustomerBillingRate> notBilled = appliedList.stream()
+					.filter(applied -> !applied.getIsBilled())
+                    .collect(Collectors.toList());
+			
+			logger.debug("Number of AppliedCustomerBillingRate ready for billing: {}", appliedList.size());
+			for (AppliedCustomerBillingRate applied : notBilled) {
+				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
+				
+				if(applied.getProduct()!= null) {
+					
+					logger.debug("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
+					if (executePayments(applied, applied.getTaxIncludedAmount().getValue())) {
+						++num;
+					}
+				}
+			}
+			
+			/*
 			for (AppliedCustomerBillingRate applied : appliedList) {
 				
-				logger.info("{} - Verify AppliedCustomerBillingRateId: {}", ++num, applied.getId());
+				logger.info("Verify AppliedCustomerBillingRateId: {} is not billed", applied.getId());
 				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
 				
 				if(!applied.getIsBilled() && applied.getProduct()!= null) {
-					logger.debug("The acbr with ID: {} must be billed", applied.getId());
-					executePayments(applied, applied.getTaxIncludedAmount().getValue());
+					
+					logger.debug("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
+					if (executePayments(applied, applied.getTaxIncludedAmount().getValue())) {
+						++num;
+					}
 				}
-			}
+			}*/
 			
 			/*
 			// apply aggregate feature
@@ -145,7 +162,7 @@ public class PaymentService implements InitializingBean {
 			String token = vcverifier.getVCVerifierToken();
 			//logger.debug("Token: {}", token);
 
-			//if (token != null) {
+			if (token != null) {
 
 
 				// TODO -> must be retrieve the paymentPreAuthorizationId from productCharatheristic ????
@@ -184,10 +201,10 @@ public class PaymentService implements InitializingBean {
 					}
 				}
 				
-//			} else {
-//				logger.warn("Token cannot be null");
-//				return false;
-//			}
+			} else {
+				logger.warn("Token cannot be null");
+				return false;
+			}
 		}
 		return false;
 	}
@@ -206,34 +223,27 @@ public class PaymentService implements InitializingBean {
 
 			// getProduct
 			logger.debug("ProductId is {}", productId);
-			try {
-				if (productInventory != null) {
-					
-					Product product = productInventory.retrieveProduct(productId, null);
-		
-					if (product != null) {
-						logger.info("Product: {}", product.toJson());
-						
-						List<Characteristic> prodChars = product.getProductCharacteristic();
 
-						// TODO Manage exception
-						if (prodChars != null && !prodChars.isEmpty()) {
-							for (Characteristic c : prodChars) {
-								if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationExternalId")) {
-									paymentPreAuthorizationExternalId = c.getValue().toString();
-									logger.info("Found the paymentPreAuthorizationId: {}", paymentPreAuthorizationExternalId);
-									break;
-								}
-							}
+			Product product = productApi.getProduct(productId, null);
+
+			if (product != null) {
+				logger.info("Product: {}", product.toJson());
+				
+				List<Characteristic> prodChars = product.getProductCharacteristic();
+
+				// TODO Manage exception
+				if (prodChars != null && !prodChars.isEmpty()) {
+					for (Characteristic c : prodChars) {
+						if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationExternalId")) {
+							paymentPreAuthorizationExternalId = c.getValue().toString();
+							logger.info("Found the paymentPreAuthorizationId: {}", paymentPreAuthorizationExternalId);
+							break;
 						}
-						
 					}
 				}
-			} catch (it.eng.dome.tmforum.tmf637.v4.ApiException e) {
-				// TODO Auto-generated catch block
-				logger.error("Error {}", e.getMessage());
-				return paymentPreAuthorizationExternalId;
+				
 			}
+				
 		}
 
 		return paymentPreAuthorizationExternalId;
@@ -254,7 +264,7 @@ public class PaymentService implements InitializingBean {
 		customerBill.setAmountDue(applied.getTaxIncludedAmount());
 		//TODO verify if it needs other attributes
 		
-		String idCustomerBill = saveCustomerBill(customerBill);
+		String idCustomerBill = appliedApi.createCustomerBill(customerBill);
 		if (idCustomerBill != null) {
 			logger.info("Created the CustomerBill with id: {}", idCustomerBill);
 						
@@ -270,6 +280,8 @@ public class PaymentService implements InitializingBean {
 			update.setBill(bill);
 			logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
 
+			return appliedApi.updateAppliedCustomerBillingRate(applied.getId(), update);
+			/*
 			try {
 				AppliedCustomerBillingRate billUpdate = appliedCustomerBillingRate.updateAppliedCustomerBillingRate(applied.getId(), update);
 				logger.info("Update AppliedCustomerBillingRate with id: {}", billUpdate.getId());
@@ -277,13 +289,13 @@ public class PaymentService implements InitializingBean {
 			} catch (ApiException e) {
 				logger.error("Error: ", e.getMessage());
 				return false;
-			}
+			}*/
 		}else {
 			logger.warn("CustomerBill cannot be null");
 			return false;
 		}
 	}
-	
+	/*
 	private String saveCustomerBill(CustomerBillCreate customerBillCreate) {
 		logger.info("Saving the customerBill ...");
 		try {
@@ -295,7 +307,7 @@ public class PaymentService implements InitializingBean {
 			logger.error("Error: {}", e.getMessage());
 			return null;
 		}
-	}
+	}*/
 	/*
 	private Map<String, List<AppliedCustomerBillingRate>> aggregate(List<AppliedCustomerBillingRate> appliedList) {
 		logger.info("Apply aggregate feature");
