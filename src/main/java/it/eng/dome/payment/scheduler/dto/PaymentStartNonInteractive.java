@@ -33,4 +33,10 @@ public class PaymentStartNonInteractive {
 			return null;
 		}
 	}
+
+	@Override
+	public String toString() {
+		return "PaymentStartNonInteractive [paymentPreAuthorizationExternalId=" + paymentPreAuthorizationExternalId
+				+ ", baseAttributes=" + baseAttributes + "]";
+	}
 }

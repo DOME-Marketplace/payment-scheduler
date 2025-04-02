@@ -1,7 +1,6 @@
 package it.eng.dome.payment.scheduler.dto;
 
 import java.util.List;
-import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,9 +52,13 @@ public class BaseAttributes {
 	public void setPaymentItems(List<PaymentItem> paymentItems) {
 		this.paymentItems = paymentItems;
 	}
-	
+
+	public void addPaymentItem(PaymentItem paymentItem) {
+		this.paymentItems.add(paymentItem);
+	}
+
 	public String toJson() {
-        ObjectMapper objectMapper = new ObjectMapper();
+		ObjectMapper objectMapper = new ObjectMapper();
 		try {
 			return objectMapper.writeValueAsString(this);
 		} catch (JsonProcessingException e) {
@@ -63,54 +66,9 @@ public class BaseAttributes {
 		}
 	}
 
-	public class PaymentItem {
-
-		private String productProviderExternalId;
-		private float amount;
-		private String currency;
-		private boolean recurring;
-		private Map<String, String> productProviderSpecificData;
-
-		
-		public String getProductProviderExternalId() {
-			return productProviderExternalId;
-		}
-
-		public void setProductProviderExternalId(String productProviderExternalId) {
-			this.productProviderExternalId = productProviderExternalId;
-		}
-
-		public float getAmount() {
-			return amount;
-		}
-
-		public void setAmount(float amount) {
-			this.amount = amount;
-		}
-
-		public String getCurrency() {
-			return currency;
-		}
-
-		public void setCurrency(String currency) {
-			this.currency = currency;
-		}
-
-		public boolean getRecurring() {
-			return recurring;
-		}
-
-		public void setRecurring(boolean recurring) {
-			this.recurring = recurring;
-		}
-
-		public Map<String, String> getProductProviderSpecificData() {
-			return productProviderSpecificData;
-		}
-
-		public void setProductProviderSpecificData(Map<String, String> productProviderSpecificData) {
-			this.productProviderSpecificData = productProviderSpecificData;
-		}
+	@Override
+	public String toString() {
+		return "BaseAttributes [externalId=" + externalId + ", customerId=" + customerId + ", customerOrganizationId="
+				+ customerOrganizationId + ", invoiceId=" + invoiceId + ", paymentItems=" + paymentItems + "]";
 	}
-	
 }

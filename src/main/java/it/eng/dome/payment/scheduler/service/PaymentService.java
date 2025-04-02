@@ -1,7 +1,12 @@
 package it.eng.dome.payment.scheduler.service;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -14,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.ProductApis;
+import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
@@ -32,7 +38,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 public class PaymentService implements InitializingBean {
 
 	private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
-	//private final static String PREFIX_KEY = "aggregate-period-";
+	private final static String CONCAT_KEY = "|";
 	
 	@Autowired
 	private TmfApiFactory tmfApiFactory;
@@ -44,13 +50,13 @@ public class PaymentService implements InitializingBean {
 	private VCVerifier vcverifier;
 
 
-	private AppliedCustomerBillRateApis appliedApi;
-	private ProductApis productApi;
+	private AppliedCustomerBillRateApis appliedApis;
+	private ProductApis productApis;
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		appliedApi = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-		productApi = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
+		appliedApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
+		productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
 	}
 	
 	/**
@@ -61,7 +67,7 @@ public class PaymentService implements InitializingBean {
 	public void payments() throws ApiException {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 
-		List<AppliedCustomerBillingRate> appliedList = appliedApi.getAllAppliedCustomerBillingRates(null);
+		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null);
 		payments(appliedList);
 	}
 	
@@ -82,64 +88,102 @@ public class PaymentService implements InitializingBean {
 					.filter(applied -> !applied.getIsBilled())
                     .collect(Collectors.toList());
 			
-			logger.debug("Number of AppliedCustomerBillingRate ready for billing: {}", appliedList.size());
+			logger.debug("Number of AppliedCustomerBillingRate ready for billing: {}", notBilled.size());
+			
+			//aggregate - payment time
+			Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<String, List<AppliedCustomerBillingRate>>();
+			
 			for (AppliedCustomerBillingRate applied : notBilled) {
+				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
+				
+				if(applied.getProduct()!= null) {
+					logger.debug("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
+					
+					OffsetDateTime endDateTime = applied.getPeriodCoverage().getEndDateTime();
+					
+					// SET keys with multiple attributes for the map<> aggregate
+		        	String endDate = getEndDate(endDateTime);
+		        	String paymentPreAuthorizationExternalId = getPaymentPreAuthorizationExternalId(applied.getProduct().getId());
+		        			        	
+		        	String key = paymentPreAuthorizationExternalId + CONCAT_KEY + endDate;
+		        	
+		        	aggregates.computeIfAbsent(key, k -> new ArrayList<>()).add(applied);
+				}
+			}
+			
+			// payment
+			logger.debug("Number of payment to pay: {}", aggregates.size());
+	        for (Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
+	        	
+	        	List<AppliedCustomerBillingRate> applied = entry.getValue();
+	        	String key = entry.getKey();
+	        	
+	        	String paymentPreAuthorizationExternalId = key.substring(0, key.indexOf(CONCAT_KEY));
+	        	// build the payload for Payment Gateway 
+	        	PaymentStartNonInteractive payment = getPayloadStartNonInteractive(paymentPreAuthorizationExternalId, applied);
+	        	
+	        	if (executePayment(payment, applied)) {
+	        		++num;
+	        	}
+	        	
+	        }
+			
+			/*for (AppliedCustomerBillingRate applied : notBilled) {
 				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
 				
 				if(applied.getProduct()!= null) {
 					
 					logger.debug("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
-					if (executePayments(applied, applied.getTaxIncludedAmount().getValue())) {
-						++num;
-					}
-				}
-			}
-			
-			/*
-			for (AppliedCustomerBillingRate applied : appliedList) {
-				
-				logger.info("Verify AppliedCustomerBillingRateId: {} is not billed", applied.getId());
-				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
-				
-				if(!applied.getIsBilled() && applied.getProduct()!= null) {
 					
-					logger.debug("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
-					if (executePayments(applied, applied.getTaxIncludedAmount().getValue())) {
-						++num;
-					}
+					OffsetDateTime endDateTime = applied.getPeriodCoverage().getEndDateTime();		        	
+		        	
+		        	// SET keys with multiple attributes for the map<> aggregate
+		        	String endDate = getEndDate(endDateTime);
+		        	String paymentPreAuthorizationExternalId = getPaymentPreAuthorizationExternalId(applied.getProduct().getId());
+		        	String customerOrganizationId = getCustomerOrganizationId(applied.getBillingAccount().getId());
+					
+		        	String key = paymentPreAuthorizationExternalId + CONCAT_KEY + endDate;
+		        	logger.debug("key created: {}", key);
+		        	
+		        	if (!payments.containsKey(key)) {
+		        		// use this customerId
+		        		String customerId = "1"; 
+		        		String invoiceId = "inv-123" + (1000 + new Random().nextInt(9000));
+		        		
+		        		// TODO => how to set randomExternalId
+		        		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
+		        		
+		        		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, randomExternalId, customerId, customerOrganizationId, invoiceId);
+		        		logger.debug("Create new payload");
+		        		payments.put(key, payment);
+		            }
+		        	
+		        	PaymentItem paymentItem = new PaymentItem();
+		        	float amount = applied.getTaxExcludedAmount().getValue().floatValue();
+		        	paymentItem.setAmount(amount);
+		        	paymentItem.setCurrency("EUR");
+		        	paymentItem.setProductProviderExternalId("eda11ca9-cf3b-420d-8570-9d3ecf3613ac");
+		        	paymentItem.setRecurring(true);
+		        	
+		        	Map<String, String> attrs = new HashMap<String, String>();
+		    		// attrs.put("additionalProp1", "data1");
+		        	paymentItem.setProductProviderSpecificData(attrs);
+		        	payments.get(key).getBaseAttributes().addPaymentItem(paymentItem); 
 				}
 			}*/
 			
+			// payment
 			/*
-			// apply aggregate feature
-			Map<String, List<AppliedCustomerBillingRate>> aggregates = aggregate(appliedList);
-
-			if (!aggregates.isEmpty()) {
-				logger.debug("Number of AppliedCustomerBillingRate aggregates: {}", aggregates.size());
-								
-				for (Map.Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
-					
-					String key = entry.getKey();
-					List<AppliedCustomerBillingRate> applied = entry.getValue();
-					logger.debug("Number of applied aggregate: {} - for {}", applied.size(), key);
-
-					float taxIncludedAmount = 0;
-					AppliedCustomerBillingRate appliedCustomerBillingRate = null;
-					for (AppliedCustomerBillingRate apply : applied) {
-						taxIncludedAmount = +apply.getTaxIncludedAmount().getValue();
-						if (appliedCustomerBillingRate == null) {
-							appliedCustomerBillingRate = apply;
-						}
-					}
-					
-					executePayments(appliedCustomerBillingRate, taxIncludedAmount);
-					num++;
-				}				
-				
-			} else {
-				logger.warn("List of AppliedCustomerBillingRate aggregate is empty");
-			}
+			logger.debug("Number of payment to pay: {}", payments.size());
+	        for (Entry<String, PaymentStartNonInteractive> entry : payments.entrySet()) {
+	        	logger.debug("Payment payload: {}", entry.getValue().toJson());
+	        	
+	        	if (executePayment(entry.getValue())) {
+					++num;
+				}
+	        }
 			*/
+			
 		}else {
 			logger.warn("List of AppliedCustomerBillingRate is empty");
 		}
@@ -149,13 +193,78 @@ public class PaymentService implements InitializingBean {
 		return response;
 	}
 	
+	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, List<AppliedCustomerBillingRate> applied) {
+		
+		// use this customerId
+		String customerId = "1"; 
+		String invoiceId = "inv-123" + (1000 + new Random().nextInt(9000));
+		
+		// TODO => how to set randomExternalId
+		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
+		String customerOrganizationId = getCustomerOrganizationId("id");
+		
+		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, randomExternalId, customerId, customerOrganizationId, invoiceId);
+		
+		for (AppliedCustomerBillingRate apply : applied) {
+			logger.debug("AppliedCustomerBillingRate payload: {}", apply.toJson());
+			
+			PaymentItem paymentItem = new PaymentItem();
+        	float amount = apply.getTaxExcludedAmount().getValue().floatValue();
+        	paymentItem.setAmount(amount);
+        	paymentItem.setCurrency("EUR");
+        	paymentItem.setProductProviderExternalId("eda11ca9-cf3b-420d-8570-9d3ecf3613ac");
+        	paymentItem.setRecurring(true);
+        	
+        	Map<String, String> attrs = new HashMap<String, String>();
+    		// attrs.put("additionalProp1", "data1");
+        	paymentItem.setProductProviderSpecificData(attrs);
+        	payment.getBaseAttributes().addPaymentItem(paymentItem); 
+		}       
+		
+		return payment;
+	}
+	
+	private boolean executePayment(PaymentStartNonInteractive paymentStartNonInteractive, List<AppliedCustomerBillingRate> applied) {
+		
+		String token = vcverifier.getVCVerifierToken();
+		if (token != null) {
+			EGPaymentResponse egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
+			   
+			if (egpayment != null) {
+				logger.debug("PaymentExternalId: {}", egpayment.getPaymentExternalId());
+				
+				//update AppliedCustomerBillingRates and save Payment in TMForum				
+				for (AppliedCustomerBillingRate appliedCustomerBillingRate : applied) {
+
+					if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
+						logger.info("The appliedCustomerBillingRateId {} has been updated", appliedCustomerBillingRate.getId());
+						//return true;
+					} else {
+						logger.warn("Cannot saving/updating data in TM Forum");
+						//TODO => probably it must be foreseen the roll-back procedure!
+						return false;
+					}
+				}
+				
+				logger.info("The overall payment process has been terminated with a successful");
+				return true;
+			}else {
+				logger.error("Error in the EG Payment response");
+				return false;
+			}
+		} else {
+			logger.warn("Token cannot be null");
+			return false;
+		}
+	}
+	
 	/**
 	 * 
 	 * @param appliedCustomerBillingRate
 	 * @param taxIncludedAmount
 	 * @return boolean - if the process has been completed successfully or not (include the saving/updating data in TM Forum)
 	 */
-	private boolean executePayments(AppliedCustomerBillingRate appliedCustomerBillingRate, float taxIncludedAmount) {
+	/*private boolean executePayments(AppliedCustomerBillingRate appliedCustomerBillingRate, float taxIncludedAmount) {
 		
 		if ((appliedCustomerBillingRate != null) && (!appliedCustomerBillingRate.getIsBilled())) {
 			
@@ -179,7 +288,7 @@ public class PaymentService implements InitializingBean {
 					String currency = "EUR";
 
 					// Get payload PaymentStartNonInteractive
-					PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderExternalId, taxIncludedAmount, currency, paymentPreAuthorizationId);
+					PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, randomExternalId, customerId, customerOrganizationId, invoiceId);
 					
 					// TODO - please take care of this comment
 					// these lines provide 2 actions: payment (paymentNonInteractive) + saving data (updateAppliedCustomerBillingRate)
@@ -208,8 +317,11 @@ public class PaymentService implements InitializingBean {
 		}
 		return false;
 	}
+	*/
 	
-	
+	/*
+	 * Retrieve the paymentPreAuthorizationExternalId from the productCharacteristic 
+	 */
 	private String getPaymentPreAuthorizationExternalId(String productId) {
 		logger.info("Start getting PreAuthorizationExternalId ...");
 		
@@ -224,7 +336,7 @@ public class PaymentService implements InitializingBean {
 			// getProduct
 			logger.debug("ProductId is {}", productId);
 
-			Product product = productApi.getProduct(productId, null);
+			Product product = productApis.getProduct(productId, null);
 
 			if (product != null) {
 				logger.info("Product: {}", product.toJson());
@@ -249,6 +361,20 @@ public class PaymentService implements InitializingBean {
 		return paymentPreAuthorizationExternalId;
 	}
 			
+	/*
+	 * Retrieve the CustomerOrganizationId from the relatedParty -> role=Customer 
+	 */
+	private String getCustomerOrganizationId(String billingAccountId) {
+		logger.info("Start getting CustomerOrganizationId ...");
+		String customerOrganizationId = "1";
+		
+		if (billingAccountId != null) {
+			// get CustomerOrganizationId from relatedParty with the role=Customer
+			return customerOrganizationId;
+		}
+		return customerOrganizationId;
+	}
+	
 	/**
 	 * 
 	 * @param applied
@@ -264,10 +390,10 @@ public class PaymentService implements InitializingBean {
 		customerBill.setAmountDue(applied.getTaxIncludedAmount());
 		//TODO verify if it needs other attributes
 		
-		String idCustomerBill = appliedApi.createCustomerBill(customerBill);
+		String idCustomerBill = appliedApis.createCustomerBill(customerBill);
 		if (idCustomerBill != null) {
-			logger.info("Created the CustomerBill with id: {}", idCustomerBill);
-						
+			// create BillRef		
+			logger.info("Preparing the BillRef");
 			BillRef bill = new BillRef();
 			bill.setId(idCustomerBill);
 			bill.setHref(idCustomerBill);
@@ -280,7 +406,7 @@ public class PaymentService implements InitializingBean {
 			update.setBill(bill);
 			logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
 
-			return appliedApi.updateAppliedCustomerBillingRate(applied.getId(), update);
+			return appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
 			/*
 			try {
 				AppliedCustomerBillingRate billUpdate = appliedCustomerBillingRate.updateAppliedCustomerBillingRate(applied.getId(), update);
@@ -329,10 +455,10 @@ public class PaymentService implements InitializingBean {
 		return aggregates;
 	}
 	
-	
+	*/
+
 	private String getEndDate(OffsetDateTime date) {
 		String onlyDate = date.toLocalDate().toString();
-		logger.info("Only Date: {}", onlyDate);
 		return onlyDate;
-	}*/
+	}
 }

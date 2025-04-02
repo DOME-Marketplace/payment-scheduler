@@ -1,5 +1,10 @@
 package it.eng.dome.payment.scheduler.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Random;
+
+import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
 
@@ -14,9 +19,24 @@ public class TestPayment {
 		String currency = "EUR";
 		
 		String paymentPreAuthorizationExternalId = "9d4fca3b-4bfa-4dba-a09f-348b8d504e44";
-		float taxIncludedAmount = 10;
-
-		PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(customerId, customerOrganizationId, invoiceId, productProviderExternalId, taxIncludedAmount, currency, paymentPreAuthorizationExternalId);
+		
+		// TODO => how to set randomExternalId
+		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
+		PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, randomExternalId, customerId, customerOrganizationId, invoiceId);
+		
+		
+		PaymentItem paymentItem = new PaymentItem();
+    	float amount = 10;
+    	paymentItem.setAmount(amount);
+    	paymentItem.setCurrency(currency);
+    	paymentItem.setProductProviderExternalId(productProviderExternalId);
+    	paymentItem.setRecurring(true);
+    	
+    	Map<String, String> attrs = new HashMap<String, String>();
+		// attrs.put("additionalProp1", "data1");
+    	paymentItem.setProductProviderSpecificData(attrs);
+    	
+    	paymentStartNonInteractive.getBaseAttributes().addPaymentItem(paymentItem);
 
 		System.out.println(paymentStartNonInteractive.toJson());
 	}

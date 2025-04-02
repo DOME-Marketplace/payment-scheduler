@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.json.JSONArray;
@@ -15,7 +14,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 
 public class TestApplied {
 
-	private static final int LIMIT = 2;
+	private static final int LIMIT = 4;
 	static List<AppliedCustomerBillingRate> applied = new ArrayList<AppliedCustomerBillingRate>(); 
 	
 	public static void main(String[] args) throws IOException {
@@ -84,7 +83,7 @@ public class TestApplied {
 	private List<AppliedCustomerBillingRate> getAllAppliedCustomerBillingRate() {
 		List<AppliedCustomerBillingRate> all = new ArrayList<AppliedCustomerBillingRate>();
 		getAllApplied(all, 0);
-		Collections.reverse(all);
+		//Collections.reverse(all);
 		return all;
 	}
 	
@@ -95,9 +94,10 @@ public class TestApplied {
 			List<AppliedCustomerBillingRate> appliedList = getPaginatedList(applied, offset, LIMIT); //appliedCustomerBillingRate.listAppliedCustomerBillingRate(null, offset, limit);
 			if (!appliedList.isEmpty()) {
 				//order invers
-				Collections.reverse(appliedList);
-				getAllApplied(list, start + 1);
+				//Collections.reverse(appliedList);
 				list.addAll(appliedList);
+				getAllApplied(list, start + 1);
+				//list.addAll(appliedList);
 			}else {
 				return;
 			}
