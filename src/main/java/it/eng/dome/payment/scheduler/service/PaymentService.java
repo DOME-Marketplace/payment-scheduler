@@ -83,43 +83,49 @@ public class PaymentService implements InitializingBean {
 		if (appliedList != null && !appliedList.isEmpty()) {
 			logger.debug("Total number of AppliedCustomerBillingRate found: {}", appliedList.size());
 			
-			// filtered appliedList isBilled
+			// filtered appliedList isBilled -> filter only applied not billed
 			List<AppliedCustomerBillingRate> notBilled = appliedList.stream()
 					.filter(applied -> !applied.getIsBilled())
                     .collect(Collectors.toList());
 			
-			logger.debug("Number of AppliedCustomerBillingRate ready for billing: {}", notBilled.size());
+			logger.info("Number of AppliedCustomerBillingRate ready for billing: {}", notBilled.size());
 			
 			//aggregate - payment time
 			Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<String, List<AppliedCustomerBillingRate>>();
 			
 			for (AppliedCustomerBillingRate applied : notBilled) {
-				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
+				logger.debug("AppliedCustomerBillingRate payload to be billed: {}", applied.toJson());
 				
-				if(applied.getProduct()!= null) {
-					logger.debug("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
+				// check if exist the product
+				if(applied.getProduct()!= null) { 
+					logger.info("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
 					
 					OffsetDateTime endDateTime = applied.getPeriodCoverage().getEndDateTime();
 					
-					// SET keys with multiple attributes for the map<> aggregate
+					// SET keys with multiple attributes for the map<> aggregates
 		        	String endDate = getEndDate(endDateTime);
 		        	String paymentPreAuthorizationExternalId = getPaymentPreAuthorizationExternalId(applied.getProduct().getId());
 		        			        	
+		        	// key = preAuthorizationId + endDate
 		        	String key = paymentPreAuthorizationExternalId + CONCAT_KEY + endDate;
 		        	
+		        	// add in the ArrayList the AppliedCustomerBillingRate
 		        	aggregates.computeIfAbsent(key, k -> new ArrayList<>()).add(applied);
 				}
 			}
 			
 			// payment
-			logger.debug("Number of payment to pay: {}", aggregates.size());
+			logger.debug("Number of aggregates payment to pay: {}", aggregates.size());
 	        for (Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
 	        	
 	        	List<AppliedCustomerBillingRate> applied = entry.getValue();
 	        	String key = entry.getKey();
 	        	
+	        	// retrieve the paymentPreAuthorizationExternalId from key
 	        	String paymentPreAuthorizationExternalId = key.substring(0, key.indexOf(CONCAT_KEY));
-	        	// build the payload for Payment Gateway 
+	        	
+	        	// build the payload for EG Payment Gateway
+	        	//TODO - verify if it must be added new attribute in the getPayloadStartNonInteractive method
 	        	PaymentStartNonInteractive payment = getPayloadStartNonInteractive(paymentPreAuthorizationExternalId, applied);
 	        	
 	        	if (executePayment(payment, applied)) {
@@ -127,62 +133,6 @@ public class PaymentService implements InitializingBean {
 	        	}
 	        	
 	        }
-			
-			/*for (AppliedCustomerBillingRate applied : notBilled) {
-				logger.debug("AppliedCustomerBillingRate payload: {}", applied.toJson());
-				
-				if(applied.getProduct()!= null) {
-					
-					logger.debug("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
-					
-					OffsetDateTime endDateTime = applied.getPeriodCoverage().getEndDateTime();		        	
-		        	
-		        	// SET keys with multiple attributes for the map<> aggregate
-		        	String endDate = getEndDate(endDateTime);
-		        	String paymentPreAuthorizationExternalId = getPaymentPreAuthorizationExternalId(applied.getProduct().getId());
-		        	String customerOrganizationId = getCustomerOrganizationId(applied.getBillingAccount().getId());
-					
-		        	String key = paymentPreAuthorizationExternalId + CONCAT_KEY + endDate;
-		        	logger.debug("key created: {}", key);
-		        	
-		        	if (!payments.containsKey(key)) {
-		        		// use this customerId
-		        		String customerId = "1"; 
-		        		String invoiceId = "inv-123" + (1000 + new Random().nextInt(9000));
-		        		
-		        		// TODO => how to set randomExternalId
-		        		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
-		        		
-		        		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, randomExternalId, customerId, customerOrganizationId, invoiceId);
-		        		logger.debug("Create new payload");
-		        		payments.put(key, payment);
-		            }
-		        	
-		        	PaymentItem paymentItem = new PaymentItem();
-		        	float amount = applied.getTaxExcludedAmount().getValue().floatValue();
-		        	paymentItem.setAmount(amount);
-		        	paymentItem.setCurrency("EUR");
-		        	paymentItem.setProductProviderExternalId("eda11ca9-cf3b-420d-8570-9d3ecf3613ac");
-		        	paymentItem.setRecurring(true);
-		        	
-		        	Map<String, String> attrs = new HashMap<String, String>();
-		    		// attrs.put("additionalProp1", "data1");
-		        	paymentItem.setProductProviderSpecificData(attrs);
-		        	payments.get(key).getBaseAttributes().addPaymentItem(paymentItem); 
-				}
-			}*/
-			
-			// payment
-			/*
-			logger.debug("Number of payment to pay: {}", payments.size());
-	        for (Entry<String, PaymentStartNonInteractive> entry : payments.entrySet()) {
-	        	logger.debug("Payment payload: {}", entry.getValue().toJson());
-	        	
-	        	if (executePayment(entry.getValue())) {
-					++num;
-				}
-	        }
-			*/
 			
 		}else {
 			logger.warn("List of AppliedCustomerBillingRate is empty");
@@ -193,13 +143,16 @@ public class PaymentService implements InitializingBean {
 		return response;
 	}
 	
+	/*
+	 * Create the payload for StartNonInteractive call
+	 */
 	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, List<AppliedCustomerBillingRate> applied) {
 		
 		// use this customerId
 		String customerId = "1"; 
 		String invoiceId = "inv-123" + (1000 + new Random().nextInt(9000));
 		
-		// TODO => how to set randomExternalId
+		// TODO => how to set randomExternalId (it cannot be the same) 
 		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
 		String customerOrganizationId = getCustomerOrganizationId("id");
 		

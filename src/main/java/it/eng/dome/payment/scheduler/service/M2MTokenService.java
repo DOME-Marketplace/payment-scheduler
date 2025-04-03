@@ -103,8 +103,7 @@ public class M2MTokenService {
 	                "vp_token", vp_token
 	        ));
 			 
-			//logger.info("Payload VP : {}", payload.toString());
-			 
+			//logger.info("Payload VP : {}", payload.toString());			 
 			return generateJWT(payload.toString(), clientId);
 			
 		} catch (Exception e) {
