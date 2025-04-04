@@ -54,7 +54,7 @@ payment:
 
 # VC Verifier credential
 vc_verifier:
-  endpoint: https://verifier.dome-marketplace-sbx.org/oidc/token
+  endpoint: ${VC_VERIFIER_TOKEN_URL:https://verifier.dome-marketplace-sbx.org/oidc/token}
   lear_credential: ${LEAR_CREDENTIAL_BASE64}
   private_key: ${PRIVATE_KEY_BASE64}
 

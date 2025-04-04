@@ -40,7 +40,7 @@ public class VCVerifier {
 	}
 	
 	public String getVCVerifierToken() {
-		logger.info("Get token from VC Verifier at URL: {}", endpoint);
+		logger.info("Getting the token from VC Verifier at the URL: {}", endpoint);
 		
 		String learCredential = learCredentialMachine.getLearCredentialMachine();
 		//logger.debug("LEAR Credential: {}", learCredential);
