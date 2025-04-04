@@ -5,7 +5,7 @@
 ### <code>0.1.0</code> :calendar: 04/04/2025
 **Improvements**
 * Usage of `2.0.0` version of `Brokerage Utils`.
-* Add new **env var**: `VC_VERIFIER_TOKEN_URL`.
+* Add new **env vars**: `VC_VERIFIER_TOKEN_URL`, and `SCHEDULING_CRON_JOB_TASK`.
 
 **BugFixing**
 * Change EG Payload adding `External` prefix.
