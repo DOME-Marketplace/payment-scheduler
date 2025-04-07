@@ -1,4 +1,4 @@
-package it.eng.dome.payment.scheduler.config;
+package it.eng.dome.payment.scheduler.request;
 
 public class SetLogLevel {
 

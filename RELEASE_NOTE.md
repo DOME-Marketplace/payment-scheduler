@@ -6,6 +6,7 @@
 **Improvements**
 * Usage of `2.0.0` version of `Brokerage Utils`.
 * Add new **env vars**: `VC_VERIFIER_TOKEN_URL`, and `SCHEDULING_CRON_JOB_TASK`.
+* Usage of Stateful and PVC to save Logger info.
 
 **BugFixing**
 * Change EG Payload adding `External` prefix.

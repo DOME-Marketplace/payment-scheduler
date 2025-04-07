@@ -16,7 +16,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
-import it.eng.dome.payment.scheduler.config.LearCredentialMachineLoader;
+import it.eng.dome.payment.scheduler.loader.LearCredentialMachineLoader;
 import it.eng.dome.payment.scheduler.model.TokenResponse;
 import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 

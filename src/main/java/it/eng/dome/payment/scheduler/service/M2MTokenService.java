@@ -36,7 +36,7 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
-import it.eng.dome.payment.scheduler.config.PrivateKeyLoader;
+import it.eng.dome.payment.scheduler.loader.PrivateKeyLoader;
 import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 
 
