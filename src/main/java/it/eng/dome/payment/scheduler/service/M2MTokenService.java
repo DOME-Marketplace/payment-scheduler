@@ -18,6 +18,7 @@ import org.bouncycastle.jce.spec.ECPrivateKeySpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -44,6 +45,9 @@ import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 public class M2MTokenService {
 	
 	private static final Logger logger = LoggerFactory.getLogger(M2MTokenService.class);
+	
+	@Value("${vc_verifier.external_domain}")
+	public String externalDomain;
 
 	private PrivateKeyLoader privateKey;
 	private String clientId;
@@ -92,11 +96,12 @@ public class M2MTokenService {
 			//ADD: encode vp_token
 			String vp_token = Base64.getEncoder().encodeToString(vpTokenJWTString.getBytes());
 			//logger.info("Encode vp_token : {}", vpTokenJWTString);
+			logger.debug("External domain: {}", externalDomain);
 			
 			 Payload payload = new Payload(Map.of(
 	                "sub", clientId,
 	                "iss", clientId,
-	                "aud", M2MTokenUtils.AUD,
+	                "aud", externalDomain, 
 	                "iat", iat,
 	                "exp", exp,
 	                "jti", UUID.randomUUID(),

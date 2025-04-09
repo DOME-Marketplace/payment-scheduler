@@ -10,6 +10,4 @@ public class M2MTokenUtils {
 	public static final String CLIENT_ASSERTION = "client_assertion";
 	public static final String CLIENT_ASSERTION_TYPE = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
 	
-	public static final String AUD = "https://verifier.dome-marketplace-sbx.org";
-
 }
