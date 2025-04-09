@@ -20,8 +20,7 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class LogLevelLoader {
 
-	private static final String LOG_LEVEL_FILENAME = "log-level.json";
-    private static final Path LOG_LEVEL_FILE = Path.of(Constants.LOG_LEVEL_PATH + File.separator + LOG_LEVEL_FILENAME);
+    private static final Path LOG_LEVEL_FILE = Path.of(Constants.LOG_LEVEL_PATH + File.separator + Constants.LOG_LEVEL_FILENAME);
     
     private static final Logger logger = LoggerFactory.getLogger(LogLevelLoader.class);
     
@@ -39,9 +38,9 @@ public class LogLevelLoader {
                 LogLevel level = LogLevel.valueOf(levelStr.toUpperCase());
                 
                 loggingSystem.setLogLevel(Constants.LOGGER_PACKAGE_PATH, level);
-                logger.info("Log level loaded from file: " + level);
+                logger.info("Log level loaded from file: {}", level);
             } catch (Exception e) {
-            	logger.error("Failed to load log level: " + e.getMessage());
+            	logger.error("Failed to load log level: {}", e.getMessage());
             }
         }
     }
