@@ -47,6 +47,26 @@ management:
     probes:
       enabled: true
 
+# Spring RabbitMQ
+spring:
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  datasource:
+    url: jdbc:h2:file:./data/payment-db
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update  # non cancella i dati, aggiorna lo schema
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  
 # Payment Service
 payment:
   payment_base_url: ${PAYMENT_BASE_URL:https://dpas-sbx.egroup.hu/api}
