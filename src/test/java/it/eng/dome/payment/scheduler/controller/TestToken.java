@@ -12,6 +12,9 @@ public class TestToken {
 		
 		PrivateKeyLoader privateKey = new PrivateKeyLoader();
 		M2MTokenService m2m = new M2MTokenService(privateKey);
+		
+		//usage of reflection to set the 'externalDomain' attribute instead of to set via constructor o getter and setter 
+		org.springframework.test.util.ReflectionTestUtils.setField(m2m, "externalDomain", "https://verifier.dome-marketplace-sbx.org");
 		System.out.println(m2m.getAssertion(learCredentialMachineLoader.getLearCredentialMachine()).get("client_assertion"));
 		
 	}
