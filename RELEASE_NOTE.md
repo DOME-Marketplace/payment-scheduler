@@ -2,13 +2,14 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
-### <code>0.1.0</code> :calendar: 04/04/2025
+### <code>0.1.0</code> :calendar: 15/04/2025
 **Improvements**
 * Usage of `2.0.0` version of `Brokerage Utils`.
 * Add new **env vars**: `VC_VERIFIER_TOKEN_URL`, `SCHEDULING_CRON_JOB_TASK` ,and `VC_VERIFIER_EXTERNAL_DOMAIN`.
 
 **BugFixing**
 * Change EG Payload adding `External` prefix.
+* Get `customerOrganizationId` and `productProviderExternalId` from **relatedParty** of the product. 
 
 
 ### <code>0.0.9</code> :calendar: 27/03/2025
