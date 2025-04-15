@@ -1,4 +1,4 @@
-package it.eng.dome.payment.scheduler.config;
+package it.eng.dome.payment.scheduler.loader;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

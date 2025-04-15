@@ -1,7 +1,7 @@
 package it.eng.dome.payment.scheduler.controller;
 
-import it.eng.dome.payment.scheduler.config.LearCredentialMachineLoader;
-import it.eng.dome.payment.scheduler.config.PrivateKeyLoader;
+import it.eng.dome.payment.scheduler.loader.LearCredentialMachineLoader;
+import it.eng.dome.payment.scheduler.loader.PrivateKeyLoader;
 import it.eng.dome.payment.scheduler.service.M2MTokenService;
 
 public class TestToken {
