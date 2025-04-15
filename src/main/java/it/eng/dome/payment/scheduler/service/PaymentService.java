@@ -128,9 +128,11 @@ public class PaymentService implements InitializingBean {
 	        	// retrieve the paymentPreAuthorizationExternalId from key
 	        	String paymentPreAuthorizationExternalId = key.substring(0, key.indexOf(CONCAT_KEY));
 	        	
+	        	String customerOrganizationId = getCustomerOrganizationId(applied.get(0).getProduct().getId());
+	        	
 	        	// build the payload for EG Payment Gateway
 	        	//TODO - verify if it must be added new attribute in the getPayloadStartNonInteractive method
-	        	PaymentStartNonInteractive payment = getPayloadStartNonInteractive(paymentPreAuthorizationExternalId, applied);
+	        	PaymentStartNonInteractive payment = getPayloadStartNonInteractive(paymentPreAuthorizationExternalId, customerOrganizationId, applied);
 	        	
 	        	if (executePayment(payment, applied)) {
 	        		++num;
@@ -150,7 +152,7 @@ public class PaymentService implements InitializingBean {
 	/*
 	 * Create the payload for StartNonInteractive call
 	 */
-	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, List<AppliedCustomerBillingRate> applied) {
+	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, String customerOrganizationId, List<AppliedCustomerBillingRate> applied) {
 		
 		// use this customerId
 		String customerId = "1"; 
@@ -158,7 +160,7 @@ public class PaymentService implements InitializingBean {
 		
 		// TODO => how to set randomExternalId (it cannot be the same) 
 		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
-		String customerOrganizationId = getCustomerOrganizationId(applied.get(0).getProduct().getId());
+		//String customerOrganizationId = getCustomerOrganizationId(applied.get(0).getProduct().getId());
 				
 		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, randomExternalId, customerId, customerOrganizationId, invoiceId);
 		
