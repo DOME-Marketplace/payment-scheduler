@@ -3,6 +3,7 @@ package it.eng.dome.payment.scheduler.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -30,21 +31,33 @@ public class PaymentNotifyController {
 		logger.info("PaymentId: {}", paymentStatus.getPaymentId());
 		logger.info("Status received: {}", paymentStatus.getStatus());
 		
-		String jwtToken = authHeader.replace("Bearer ", "");
-		DecodedJWT jwt = JWT.decode(jwtToken);
-		//logger.info("Payload: {}" , jwt.getPayload());
-		//logger.info("Header: {}" , jwt.getHeader());
-		//logger.info("Claims: {}" , jwt.getClaims());
-		//logger.info("Claims - sub: {}" , jwt.getClaim("sub").asString());
+		String msg = "request accepted";
 		
-		logger.info("Claims - iss: {}" , jwt.getClaim("iss").asString());
-		String iss = jwt.getClaim("iss").asString();
-		if (issuer.equalsIgnoreCase(iss)) {
-			logger.info("Token valid");
+		String jwtToken = getBearerToken(authHeader);
+		if (jwtToken != null) {
+			DecodedJWT jwt = JWT.decode(jwtToken);
+		
+			logger.info("Claims - iss: {}" , jwt.getClaim("iss").asString());
+			String iss = jwt.getClaim("iss").asString();
+			if (issuer.equalsIgnoreCase(iss)) {
+				logger.info("Token valid");
+				//msg = "token valid";
+			}else {
+				logger.warn("Token not valid");
+				msg = "token not valid";
+			}
 		}else {
-			logger.warn("Token not valid");
+			logger.debug("Cannot retrieve the token from header: {}", authHeader);
+			msg = "No header to get the token";
 		}
-		
-		return ResponseEntity.ok("Sent payment status: " + paymentStatus.getStatus() + " for paymentId: " + paymentStatus.getPaymentId());
+
+		return new ResponseEntity<String>(msg, HttpStatus.OK);
 	}
+	
+	private String getBearerToken(String authHeader) {       
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return null;
+    }
 }
