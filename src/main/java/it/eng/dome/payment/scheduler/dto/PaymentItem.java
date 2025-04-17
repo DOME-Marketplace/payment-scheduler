@@ -8,6 +8,7 @@ public class PaymentItem {
 	private float amount;
 	private String currency;
 	private boolean recurring;
+	private String paymentItemExternalId;
 	private Map<String, String> productProviderSpecificData;
 
 	public String getProductProviderExternalId() {
@@ -40,6 +41,14 @@ public class PaymentItem {
 
 	public void setRecurring(boolean recurring) {
 		this.recurring = recurring;
+	}
+
+	public String getPaymentItemExternalId() {
+		return paymentItemExternalId;
+	}
+
+	public void setPaymentItemExternalId(String paymentItemExternalId) {
+		this.paymentItemExternalId = paymentItemExternalId;
 	}
 
 	public Map<String, String> getProductProviderSpecificData() {

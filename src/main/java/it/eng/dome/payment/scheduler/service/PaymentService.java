@@ -2,10 +2,12 @@ package it.eng.dome.payment.scheduler.service;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Function;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
@@ -22,10 +24,12 @@ import it.eng.dome.brokerage.api.ProductApis;
 import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
+import it.eng.dome.payment.scheduler.model.EGPaymentResponse.Payout;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.CustomerType;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
+import it.eng.dome.payment.scheduler.util.PaymentStringUtils;
 import it.eng.dome.payment.scheduler.util.ProviderType;
 import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
@@ -157,12 +161,8 @@ public class PaymentService implements InitializingBean {
 		// use this customerId
 		String customerId = "1"; 
 		String invoiceId = "inv-123" + (1000 + new Random().nextInt(9000));
-		
-		// TODO => how to set randomExternalId (it cannot be the same) 
-		String randomExternalId = "479c2a6d-5197-452c-ba1b-fd1393c5" + (1000 + new Random().nextInt(9000));
-		//String customerOrganizationId = getCustomerOrganizationId(applied.get(0).getProduct().getId());
 				
-		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, randomExternalId, customerId, customerOrganizationId, invoiceId);
+		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId, invoiceId);
 		
 		for (AppliedCustomerBillingRate apply : applied) {
 			//logger.debug("AppliedCustomerBillingRate payload: {}", apply.toJson());
@@ -173,9 +173,10 @@ public class PaymentService implements InitializingBean {
         	paymentItem.setCurrency("EUR");
         	paymentItem.setProductProviderExternalId(getProductProviderExternalId(apply.getProduct().getId()));
         	paymentItem.setRecurring(true);
+        	paymentItem.setPaymentItemExternalId(PaymentStringUtils.removeAppliedPrefix(apply.getId()));
         	
         	Map<String, String> attrs = new HashMap<String, String>();
-    		// attrs.put("additionalProp1", "data1");
+        	// attrs.put("additionalProp1", "data1"); // list of attrs if need
         	paymentItem.setProductProviderSpecificData(attrs);
         	payment.getBaseAttributes().addPaymentItem(paymentItem); 
 		}       
@@ -198,8 +199,35 @@ public class PaymentService implements InitializingBean {
 			if (egpayment != null) {
 				logger.debug("PaymentExternalId: {}", egpayment.getPaymentExternalId());
 				
+				// verify the status
+				List<Payout> payoutList = egpayment.getPayoutList();
+				Map<String, AppliedCustomerBillingRate> applyMap = applied.stream().collect(Collectors.toMap(AppliedCustomerBillingRate::getId, Function.identity()));
+				
+				for (Payout payout : payoutList) {
+					logger.info("status: {}", payout.getState());
+					
+					// set apply if payment return status = processed
+					if (Status.isValid(payout.getState())) {
+						String applyId = PaymentStringUtils.addAppliedPrefix(payout.getPaymentItemExternalId());
+						logger.info("get apply id: {}", applyId);
+						
+						AppliedCustomerBillingRate appliedCustomerBillingRate = applyMap.get(applyId);
+						if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
+							logger.info("The appliedCustomerBillingRateId {} has been updated", appliedCustomerBillingRate.getId());
+							//return true;
+						} else {
+							logger.warn("Cannot saving/updating data in TM Forum");
+							//TODO => probably it must be foreseen the roll-back procedure!
+							return false;
+						}						
+					} else {
+						//
+						logger.debug("Status .... non valid ");
+					}
+				}
+				
 				//update AppliedCustomerBillingRates and save Payment in TMForum				
-				for (AppliedCustomerBillingRate appliedCustomerBillingRate : applied) {
+				/*for (AppliedCustomerBillingRate appliedCustomerBillingRate : applied) {
 
 					if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
 						logger.info("The appliedCustomerBillingRateId {} has been updated", appliedCustomerBillingRate.getId());
@@ -209,7 +237,7 @@ public class PaymentService implements InitializingBean {
 						//TODO => probably it must be foreseen the roll-back procedure!
 						return false;
 					}
-				}
+				}*/
 				
 				logger.info("The overall payment process has been terminated with a successful");
 				return true;
@@ -273,8 +301,8 @@ public class PaymentService implements InitializingBean {
 				List<RelatedParty> parties = product.getRelatedParty();
 				for (RelatedParty party : parties) {
 					if (ProviderType.isValid(party.getRole())) {
-						logger.debug("Retrieved productProviderExternalId: {}", party.getId());
-						return party.getId().replaceFirst("^urn:ngsi-ld:organization:?", ""); 
+						logger.debug("Retrieved productProviderExternalId: {}", PaymentStringUtils.removeOrganizationPrefix(party.getId()));
+						return PaymentStringUtils.removeOrganizationPrefix(party.getId()); 
 					}
 				}
 			}
@@ -299,8 +327,8 @@ public class PaymentService implements InitializingBean {
 				List<RelatedParty> parties = product.getRelatedParty();
 				for (RelatedParty party : parties) {
 					if (CustomerType.isValid(party.getRole())) {
-						logger.debug("Retrieved customerOrganizationId: {}", party.getId());
-						return party.getId().replaceFirst("^urn:ngsi-ld:organization:?", ""); 
+						logger.debug("Retrieved customerOrganizationId: {}",PaymentStringUtils.removeOrganizationPrefix(party.getId()));
+						return PaymentStringUtils.removeOrganizationPrefix(party.getId()); 
 					}
 				}
 			}
@@ -394,5 +422,26 @@ public class PaymentService implements InitializingBean {
 	private String getEndDate(OffsetDateTime date) {
 		String onlyDate = date.toLocalDate().toString();
 		return onlyDate;
+	}
+	
+	private enum Status {
+		PROCESSED(true), 
+		FAILED(false), 
+		PENDING(false);
+
+		private final boolean valid;
+
+		Status(boolean valid) {
+			this.valid = valid;
+		}
+
+		public boolean isValid() {
+			return valid;
+		}
+
+		public static boolean isValid(String value) {
+			return Arrays.stream(Status.values())
+					.anyMatch(status -> status.name().equalsIgnoreCase(value) && status.isValid());
+		}
 	}
 }
