@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
@@ -72,9 +71,8 @@ public class TestAggregatePaymentTime {
         	if (!payments.containsKey(key)) {
         		// use this customerId
         		String customerId = "1"; 
-        		String invoiceId = "inv-123" + (1000 + new Random().nextInt(9000));
         		
-        		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId, invoiceId);
+        		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId);
         		System.out.println("create payload");
         		payments.put(key, payment);
             }

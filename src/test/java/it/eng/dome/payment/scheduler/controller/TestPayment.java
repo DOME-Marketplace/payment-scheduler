@@ -13,13 +13,12 @@ public class TestPayment {
 		
 		String customerId = "1";
 		String customerOrganizationId = "1"; 
-		String invoiceId = "ab-132";
 		String productProviderExternalId = "eda11ca9-cf3b-420d-8570-9d3ecf3613ac"; 
 		String currency = "EUR";
 		
 		String paymentPreAuthorizationExternalId = "9d4fca3b-4bfa-4dba-a09f-348b8d504e44";
 		
-		PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId, invoiceId);
+		PaymentStartNonInteractive paymentStartNonInteractive = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId);
 		
 		
 		PaymentItem paymentItem = new PaymentItem();
