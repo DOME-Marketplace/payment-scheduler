@@ -14,7 +14,7 @@ build:
 
 # Scheduling Task Configuration  
 scheduling:
-  cron: ${SCHEDULING_CRON_JOB_TASK:0 0 5,17 * * ?} 
+  cron: ${SCHEDULING_CRON_JOB_TASK:0 30 0,4,8,12,16,20 * * ?} 
 
 # Logging Configuration
 logging:
