@@ -55,6 +55,9 @@ public class EGPaymentResponse {
 
 		@JsonProperty("currency")
 		private String currency;
+				
+		@JsonProperty("paymentItemExternalId")
+		private String paymentItemExternalId;
 
 		public String getState() {
 			return state;
@@ -95,5 +98,13 @@ public class EGPaymentResponse {
 		public void setCurrency(String currency) {
 			this.currency = currency;
 		}
+
+		public String getPaymentItemExternalId() {
+			return paymentItemExternalId;
+		}
+
+		public void setPaymentItemExternalId(String paymentItemExternalId) {
+			this.paymentItemExternalId = paymentItemExternalId;
+		}		
 	}
 }

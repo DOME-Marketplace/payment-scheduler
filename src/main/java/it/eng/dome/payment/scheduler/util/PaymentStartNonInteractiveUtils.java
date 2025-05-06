@@ -2,6 +2,7 @@ package it.eng.dome.payment.scheduler.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import it.eng.dome.payment.scheduler.dto.BaseAttributes;
 import it.eng.dome.payment.scheduler.dto.PaymentItem;
@@ -9,11 +10,11 @@ import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 
 public class PaymentStartNonInteractiveUtils {
 
-public static PaymentStartNonInteractive getPaymentStartNonInteractive(String paymentPreAuthorizationExternalId, String externalId, String customerId, String customerOrganizationId, String invoiceId) {
+public static PaymentStartNonInteractive getPaymentStartNonInteractive(String paymentPreAuthorizationExternalId, String customerId, String customerOrganizationId, String invoiceId) {
 		
 		BaseAttributes baseAttributes = new BaseAttributes();
 
-		baseAttributes.setExternalId(externalId);
+		baseAttributes.setExternalId(UUID.randomUUID().toString()); // // ExternalId must be unique, can be random or sequential
 		baseAttributes.setCustomerId(customerId);
 		baseAttributes.setCustomerOrganizationId(customerOrganizationId);
 		baseAttributes.setInvoiceId(invoiceId);
