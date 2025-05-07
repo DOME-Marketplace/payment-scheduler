@@ -221,19 +221,27 @@ public class PaymentService implements InitializingBean {
 					if (Status.isValid(payout.getState())) {
 
 						String applyId = payout.getPaymentItemExternalId();
-						logger.info("Get apply id: {}", applyId);
 						
-						// get appliedCustomerBillingRate from Map
-						AppliedCustomerBillingRate appliedCustomerBillingRate = applyMap.get(applyId);
-						
-						if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
-							logger.info("The appliedCustomerBillingRateId {} has been updated", appliedCustomerBillingRate.getId());
-							//return true;
+						if (applyId != null) {
+							logger.info("Get apply id: {}", applyId);
+							
+							// get appliedCustomerBillingRate from Map
+							AppliedCustomerBillingRate appliedCustomerBillingRate = applyMap.get(applyId);
+							
+							if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
+								logger.info("The appliedCustomerBillingRateId {} has been updated", appliedCustomerBillingRate.getId());
+								//return true;
+							} else {
+								logger.warn("Cannot saving/updating data in TM Forum");
+								//TODO => probably it must be foreseen the roll-back procedure!
+								return false;
+							}		
 						} else {
-							logger.warn("Cannot saving/updating data in TM Forum");
-							//TODO => probably it must be foreseen the roll-back procedure!
+							logger.warn("Payout: {}", payout.toJson());
+							logger.warn("Cannot find the paymentItemExternalId from Payout. It's the applyId");
 							return false;
-						}						
+						}
+										
 					} else {
 						//
 						logger.debug("Status .... non valid ");
