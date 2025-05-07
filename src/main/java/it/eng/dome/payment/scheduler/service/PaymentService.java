@@ -259,7 +259,7 @@ public class PaymentService implements InitializingBean {
 	 */
 	private String getPaymentPreAuthorizationExternalId(String productId) {
 
-		String paymentPreAuthorizationExternalId = "9d4fca3b-4bfa-4dba-a09f-348b8d504e44";
+		String paymentPreAuthorizationExternalId = null;
 
 		if (productId != null) {
 
@@ -305,7 +305,7 @@ public class PaymentService implements InitializingBean {
 		}
 		
 		logger.error("Couldn't retrieve the productProviderExternalId from product {}", productId);
-		return "eda11ca9-cf3b-420d-8570-9d3ecf3613ac";
+		return null;
 	}
 			
 	/*
@@ -329,7 +329,7 @@ public class PaymentService implements InitializingBean {
 		}
 		
 		logger.error("Couldn't retrieve the customerOrganizationId from product {}", productId);
-		return "1";
+		return null;
 	}
 	
 	/**
