@@ -105,16 +105,14 @@ public class PaymentService implements InitializingBean {
 				if(applied.getProduct() != null) { 
 					logger.info("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
 					
-					OffsetDateTime endDateTime = applied.getPeriodCoverage().getEndDateTime();
-					
 					// SET keys with multiple attributes for the map<> aggregates
-		        	String endDate = getEndDate(endDateTime);
+		        	String endDate = getEndDate(applied);
 		        	String paymentPreAuthorizationExternalId = getPaymentPreAuthorizationExternalId(applied.getProduct().getId());
 		        	
 		        	if (paymentPreAuthorizationExternalId != null) {
-		        		// key = preAuthorizationId + endDate
+		        		// key = preAuthorizationId + endDate => i.e. 9d4fca3b-4bfa-4dba-a09f-348b8d504e44|2025-05-05
 			        	String key = paymentPreAuthorizationExternalId + CONCAT_KEY + endDate;
-			        	
+			        	logger.debug("key: {}", key);
 			        	// add in the ArrayList the AppliedCustomerBillingRate
 			        	aggregates.computeIfAbsent(key, k -> new ArrayList<>()).add(applied);
 		        	}
@@ -378,9 +376,19 @@ public class PaymentService implements InitializingBean {
 		}
 	}
 	
-	private String getEndDate(OffsetDateTime date) {
-		String onlyDate = date.toLocalDate().toString();
-		return onlyDate;
+	private String getEndDate(AppliedCustomerBillingRate applied) {
+		
+		if (applied.getPeriodCoverage() != null && applied.getPeriodCoverage().getEndDateTime() != null) {
+			
+			OffsetDateTime endDateTime = applied.getPeriodCoverage().getEndDateTime();
+			return endDateTime.toLocalDate().toString();
+		}else {
+			
+			OffsetDateTime date = OffsetDateTime.now();
+			String onlyDate = date.toLocalDate().toString();
+			logger.warn("Cannot retrive the EndDateTime from PeriodCoverage. It will be set the current DateTime: {}", onlyDate);
+			return onlyDate;
+		}
 	}
 	
 	private enum Status {
