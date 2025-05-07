@@ -17,7 +17,6 @@ import org.json.JSONException;
 import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
-import it.eng.dome.payment.scheduler.util.PaymentStringUtils;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 
 
@@ -83,7 +82,7 @@ public class TestAggregatePaymentTime {
         	paymentItem.setCurrency("EUR");
         	paymentItem.setProductProviderExternalId("eda11ca9-cf3b-420d-8570-9d3ecf3613ac");
         	paymentItem.setRecurring(true);
-        	paymentItem.setPaymentItemExternalId(PaymentStringUtils.removeAppliedPrefix(appliedCustomerBillingRate.getId()));
+        	paymentItem.setPaymentItemExternalId(appliedCustomerBillingRate.getId());
         	
         	Map<String, String> attrs = new HashMap<String, String>();
     		// attrs.put("additionalProp1", "data1");

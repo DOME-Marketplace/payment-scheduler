@@ -13,7 +13,7 @@
 		
 	<groupId>it.eng.dome.payment</groupId>
 	<artifactId>scheduler</artifactId>
-	<version>0.1.0</version>
+	<version>0.1.0a</version>
 	<name>Payment Scheduler</name>
 	<description>Payment Scheduler for DOME project</description>
 	

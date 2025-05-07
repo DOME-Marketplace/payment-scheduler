@@ -2,6 +2,11 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>0.1.0a</code> :calendar: 07/05/2025
+**Improvements**
+* Remove class to manage prefix for entities ID.
+* Set customerId = "1", but this attribute must be removed in the future.
+
 ### <code>0.1.0</code> :calendar: 06/05/2025
 **Improvements**
 * Usage of `2.0.0` version of `Brokerage Utils`.

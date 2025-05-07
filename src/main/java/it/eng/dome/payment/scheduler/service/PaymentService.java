@@ -28,7 +28,6 @@ import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.CustomerType;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
-import it.eng.dome.payment.scheduler.util.PaymentStringUtils;
 import it.eng.dome.payment.scheduler.util.ProviderType;
 import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
@@ -161,8 +160,8 @@ public class PaymentService implements InitializingBean {
 	 */
 	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, String customerOrganizationId, List<AppliedCustomerBillingRate> applied) {
 		
-		// use customerId = customerOrganizationId
-		String customerId = customerOrganizationId; 
+		//FIXME - use customerId default - this attribute must be removed in the future
+		String customerId = "1"; 
 				
 		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId);
 		
@@ -180,7 +179,7 @@ public class PaymentService implements InitializingBean {
 	        	paymentItem.setCurrency("EUR");
 	        	paymentItem.setProductProviderExternalId(productProviderExternalId);
 	        	paymentItem.setRecurring(true);
-	        	paymentItem.setPaymentItemExternalId(PaymentStringUtils.removeAppliedPrefix(apply.getId()));
+	        	paymentItem.setPaymentItemExternalId(apply.getId());
 	        	
 	        	Map<String, String> attrs = new HashMap<String, String>();
 	        	// attrs.put("additionalProp1", "data1"); // list of attrs if need
@@ -221,7 +220,7 @@ public class PaymentService implements InitializingBean {
 					// set apply if payment return status = processed
 					if (Status.isValid(payout.getState())) {
 
-						String applyId = PaymentStringUtils.addAppliedPrefix(payout.getPaymentItemExternalId());
+						String applyId = payout.getPaymentItemExternalId();
 						logger.info("Get apply id: {}", applyId);
 						
 						// get appliedCustomerBillingRate from Map
@@ -296,8 +295,8 @@ public class PaymentService implements InitializingBean {
 				List<RelatedParty> parties = product.getRelatedParty();
 				for (RelatedParty party : parties) {
 					if (ProviderType.isValid(party.getRole())) {
-						logger.debug("Retrieved productProviderExternalId: {}", PaymentStringUtils.removeOrganizationPrefix(party.getId()));
-						return PaymentStringUtils.removeOrganizationPrefix(party.getId()); 
+						logger.debug("Retrieved productProviderExternalId: {}", party.getId());
+						return party.getId(); 
 					}
 				}
 			}
@@ -320,8 +319,8 @@ public class PaymentService implements InitializingBean {
 				List<RelatedParty> parties = product.getRelatedParty();
 				for (RelatedParty party : parties) {
 					if (CustomerType.isValid(party.getRole())) {
-						logger.debug("Retrieved customerOrganizationId: {}",PaymentStringUtils.removeOrganizationPrefix(party.getId()));
-						return PaymentStringUtils.removeOrganizationPrefix(party.getId()); 
+						logger.debug("Retrieved customerOrganizationId: {}", party.getId());
+						return party.getId(); 
 					}
 				}
 			}
