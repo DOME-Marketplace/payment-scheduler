@@ -2,7 +2,6 @@ package it.eng.dome.payment.scheduler.service;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +33,7 @@ import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateUpdate;
-import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
+
 
 @Component(value = "paymentService")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -53,6 +50,9 @@ public class PaymentService implements InitializingBean {
 
 	@Autowired
 	private VCVerifier vcverifier;
+	
+	@Autowired
+	private TMForumService tmforumService;
 
 
 	private AppliedCustomerBillRateApis appliedApis;
@@ -88,16 +88,16 @@ public class PaymentService implements InitializingBean {
 		if (appliedList != null && !appliedList.isEmpty()) {
 			logger.debug("Total number of AppliedCustomerBillingRate found: {}", appliedList.size());
 			
-			// filtered appliedList isBilled -> filter only applied not billed
+			// filtered appliedList to get only bill with isBilled = false && type recurring 
 			List<AppliedCustomerBillingRate> notBilled = appliedList.stream()
-					.filter(applied -> !applied.getIsBilled())
+					.filter(applied -> !applied.getIsBilled() && applied.getType().toLowerCase().contains("recurring"))
                     .collect(Collectors.toList());
 			
 			logger.info("Number of AppliedCustomerBillingRate ready for billing: {}", notBilled.size());
 			
 			//aggregate - payment time
 			Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<String, List<AppliedCustomerBillingRate>>();
-			// aggregate process
+	
 			for (AppliedCustomerBillingRate applied : notBilled) {
 				//logger.debug("AppliedCustomerBillingRate payload to be billed: {}", applied.toJson());
 				
@@ -112,7 +112,7 @@ public class PaymentService implements InitializingBean {
 		        	if (paymentPreAuthorizationExternalId != null) {
 		        		// key = preAuthorizationId + endDate => i.e. 9d4fca3b-4bfa-4dba-a09f-348b8d504e44|2025-05-05
 			        	String key = paymentPreAuthorizationExternalId + CONCAT_KEY + endDate;
-			        	logger.debug("key: {}", key);
+
 			        	// add in the ArrayList the AppliedCustomerBillingRate
 			        	aggregates.computeIfAbsent(key, k -> new ArrayList<>()).add(applied);
 		        	}
@@ -143,6 +143,8 @@ public class PaymentService implements InitializingBean {
 	        		logger.error("Cannot build the Payment payload. The customerOrganizationId is null");
 	        	}
 	        }
+	        
+	        logger.info("The payment process scheduled has been terminated successfully at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 			
 		}else {
 			logger.warn("List of AppliedCustomerBillingRate is empty");
@@ -158,8 +160,8 @@ public class PaymentService implements InitializingBean {
 	 */
 	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, String customerOrganizationId, List<AppliedCustomerBillingRate> applied) {
 		
-		//FIXME - use customerId default - this attribute must be removed in the future
-		String customerId = "1"; 
+		//FIXME - use customerId empty - this attribute must be removed in the future
+		String customerId = "0"; 
 				
 		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId);
 		
@@ -208,45 +210,38 @@ public class PaymentService implements InitializingBean {
 			if (egpayment != null) {
 				logger.debug("PaymentExternalId: {}", egpayment.getPaymentExternalId());
 				
-				// verify the status
 				List<Payout> payoutList = egpayment.getPayoutList();
 				Map<String, AppliedCustomerBillingRate> applyMap = applied.stream().collect(Collectors.toMap(AppliedCustomerBillingRate::getId, Function.identity()));
 				
 				for (Payout payout : payoutList) {
 					logger.info("Get payout status: {}", payout.getState());
+				
+					// Get the status
+					Status statusEnum = Status.valueOf(payout.getState().toUpperCase());
+					String applyId = payout.getPaymentItemExternalId();
 					
-					// set apply if payment return status = processed
-					if (Status.isValid(payout.getState())) {
-
-						String applyId = payout.getPaymentItemExternalId();
-						
-						if (applyId != null) {
-							logger.info("Get apply id: {}", applyId);
-							
-							// get appliedCustomerBillingRate from Map
-							AppliedCustomerBillingRate appliedCustomerBillingRate = applyMap.get(applyId);
-							
-							if (updateAppliedCustomerBillingRate(appliedCustomerBillingRate)) {
-								logger.info("The appliedCustomerBillingRateId {} has been updated", appliedCustomerBillingRate.getId());
-								//return true;
-							} else {
-								logger.warn("Cannot saving/updating data in TM Forum");
-								//TODO => probably it must be foreseen the roll-back procedure!
-								return false;
-							}		
-						} else {
-							logger.warn("Payout: {}", payout.toJson());
-							logger.warn("Cannot find the paymentItemExternalId from Payout. It's the applyId");
-							return false;
-						}
+					//TODO - To delete - workaround to get applyId - we are waiting for the paymentItemExternalId in the Payout  
+					if (applyId == null && applied.size() == 1) {
+						logger.debug("Workaround - we are waiting for the paymentItemExternalId in the Payout");
+						logger.info("Get applyId from list because is only one!");
+						applyId = applied.get(0).getId();
+					}				
 										
+					if (applyId != null) {
+						logger.info("Get applyId: {}", applyId);
+					
+						AppliedCustomerBillingRate appliedCustomerBillingRate = applyMap.get(applyId);
+						
+						logger.info("Handling payment status: {}", statusEnum.name());
+						handlePaymentStatus(statusEnum, appliedCustomerBillingRate);
+						
 					} else {
-						//
-						logger.debug("Status .... non valid ");
+						logger.warn("Payout: {}", payout.toJson());
+						logger.warn("Cannot find the paymentItemExternalId from Payout. It's the applyId");
+						return false;
 					}
 				}
 				
-				logger.info("The overall payment process has been terminated with a successful");
 				return true;
 			}else {
 				logger.error("Error in the EG Payment Server");
@@ -337,44 +332,49 @@ public class PaymentService implements InitializingBean {
 		return null;
 	}
 	
-	/**
-	 * 
-	 * @param applied
-	 * @return
-	 */
-	private boolean updateAppliedCustomerBillingRate(AppliedCustomerBillingRate applied) {
-		logger.info("Update the AppliedCustomerBillingRate for id: {}", applied.getId());		
 		
-		logger.debug("Creating CustomerBill to set the BillRef in AppliedCustomerBillingRate");
-		//create a new CustomerBill to set in the AppliedCustomerBillingRate (BillRef)
-		CustomerBillCreate customerBill = new CustomerBillCreate();
-		customerBill.setBillingAccount(applied.getBillingAccount());
-		customerBill.setAmountDue(applied.getTaxIncludedAmount());
-		//TODO verify if it needs other attributes
-		
-		String idCustomerBill = appliedApis.createCustomerBill(customerBill);
-		if (idCustomerBill != null) {
-			// create BillRef		
-			logger.info("Preparing the BillRef");
-			BillRef bill = new BillRef();
-			bill.setId(idCustomerBill);
-			bill.setHref(idCustomerBill);
-			logger.info("Set id {} in the BillRef", bill.getId());
-			
-			// create AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate
-			logger.debug("Creating an AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate with id: {}", applied.getId());	
-			AppliedCustomerBillingRateUpdate update = new AppliedCustomerBillingRateUpdate();
-			update.setIsBilled(true);
-			update.setBill(bill);
-			logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
-
-			return appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
-
-		}else {
-			logger.warn("CustomerBill cannot be null");
-			return false;
-		}
+	private enum Status {
+	    PROCESSED,
+	    FAILED,
+	    PENDING
 	}
+	
+	private void handlePaymentStatus(Status status, AppliedCustomerBillingRate applied) {
+	    switch (status) {
+	        case PROCESSED:
+	            handleStatusProcessed(applied);
+	            break;
+	        case PENDING:
+	            handleStatusPending(applied);
+	            break;
+	        case FAILED:
+	            handleStatusFailed(applied);
+	            break;
+	    }
+	}
+
+	private void handleStatusProcessed(AppliedCustomerBillingRate applied) {
+				
+		if (tmforumService.updateAppliedCustomerBillingRate(applied)) { // set isBilled = true and add CustomerBill (BillRef)
+			logger.info("The appliedCustomerBillingRateId {} has been updated successfully", applied.getId());
+		} else {
+			logger.error("Couldn't update appliedCustomerBillingRate in TMForum");
+		}	
+	}
+
+	private void handleStatusPending(AppliedCustomerBillingRate applied) {
+		
+		if (tmforumService.setIsBilled(applied, true)) { // set isBilled = true
+			logger.info("IsBilled has been updated successfully for the appliedCustomerBillingRateId {}", applied.getId());
+		} else {
+			logger.error("Couldn't set isBilled for the appliedCustomerBillingRate in TMForum");
+		}	
+	}
+	
+	private void handleStatusFailed(AppliedCustomerBillingRate applied) {
+		logger.info("No update for the appliedCustomerBillingRateId {}", applied.getId());
+	}
+	
 	
 	private String getEndDate(AppliedCustomerBillingRate applied) {
 		
@@ -388,27 +388,6 @@ public class PaymentService implements InitializingBean {
 			String onlyDate = date.toLocalDate().toString();
 			logger.warn("Cannot retrive the EndDateTime from PeriodCoverage. It will be set the current DateTime: {}", onlyDate);
 			return onlyDate;
-		}
-	}
-	
-	private enum Status {
-		PROCESSED(true), 
-		FAILED(false), 
-		PENDING(false);
-
-		private final boolean valid;
-
-		Status(boolean valid) {
-			this.valid = valid;
-		}
-
-		public boolean isValid() {
-			return valid;
-		}
-
-		public static boolean isValid(String value) {
-			return Arrays.stream(Status.values())
-					.anyMatch(status -> status.name().equalsIgnoreCase(value) && status.isValid());
 		}
 	}
 }
