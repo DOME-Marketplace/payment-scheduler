@@ -48,24 +48,28 @@ public class StartPayment {
 		headers.set("Authorization", "Bearer " + token);
 		HttpEntity<String> request = new HttpEntity<>(payment.toJson(), headers);
 
-		JwtResponse response = restTemplate.postForObject(url, request, JwtResponse.class);
-		if (response.getResponseJwt() != null) {
-			String responseJwt = response.getResponseJwt();
-			logger.debug("ResponseJwt: {}", responseJwt);
-			try {
-				ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			JwtResponse response = restTemplate.postForObject(url, request, JwtResponse.class);
+			if (response.getResponseJwt() != null) {
+				String responseJwt = response.getResponseJwt();
+				logger.debug("ResponseJwt: {}", responseJwt);
+	
+				// decode the response
 				DecodedJWT jwt = JWT.decode(responseJwt);
 				logger.debug("Payload: {}", jwt.getPayload());
 				logger.info("paymentExternalId: {}", jwt.getClaim("paymentExternalId").asString());
 				logger.info("paymentPreAuthorizationExternalId: {}", jwt.getClaim("paymentPreAuthorizationExternalId").asString());
 				
+				ObjectMapper objectMapper = new ObjectMapper();
 				return objectMapper.readValue(decode(jwt.getPayload()), EGPaymentResponse.class);
-			} catch (Exception e) {
-				logger.error(e.getMessage());
+	
+			} else {
+				logger.error("Error: {}", response.getError().toJson());
 				return null;
-	        }
-		}else {
-			logger.error("Error: {}", response.getError().toJson());
+			}
+				
+		}catch(Exception e) {
+			logger.error("Error: {}", e.getMessage());
 			return null;
 		}
 	}
