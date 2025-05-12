@@ -32,6 +32,21 @@ public class TMForumService implements InitializingBean {
 	/**
 	 * This method update the AppliedCustomerBillingRate setting isBilled attribute to true and creating a CustomerBill (BillRef)
 	 * 
+	 * @param appliedId
+	 * @return
+	 */
+	public boolean addCustomerBill(String appliedId) {
+		logger.info("Add the CustomerBill for appliedId: {}", appliedId);
+		
+		AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
+		
+		return updateAppliedCustomerBillingRate(applied);
+	}
+	
+	
+	/**
+	 * This method update the AppliedCustomerBillingRate setting isBilled attribute to true and creating a CustomerBill (BillRef)
+	 * 
 	 * @param applied
 	 * @return
 	 */
@@ -59,14 +74,29 @@ public class TMForumService implements InitializingBean {
 			AppliedCustomerBillingRateUpdate update = new AppliedCustomerBillingRateUpdate();
 			update.setIsBilled(true);
 			update.setBill(bill);
+			
 			logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
 
 			return appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
 			
-		}else {
+		} else {
 			logger.warn("CustomerBill cannot be null");
 			return false;
 		}
+	}
+	
+	/**
+	 * This method set isBilled attribute as parameter billed for the AppliedCustomerBillingRateId
+	 * 
+	 * @param appliedId
+	 * @param billed
+	 * @return
+	 */
+	public boolean setIsBilled(String appliedId, boolean billed) {
+
+		logger.info("Set isBilled for appliedId: {}", appliedId);		
+		AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
+		return setIsBilled(applied, billed);
 	}
 	
 	
@@ -84,6 +114,20 @@ public class TMForumService implements InitializingBean {
 		logger.debug("Creating an AppliedCustomerBillingRateUpdate object to set isBilled for the AppliedCustomerBillingRate with id: {}", applied.getId());	
 		AppliedCustomerBillingRateUpdate update = new AppliedCustomerBillingRateUpdate();
 		update.setIsBilled(billed);
+		//update.setBillingAccount(applied.getBillingAccount());
+		
+		//TODO is billed = true non è richiesto setBillingAccount
+		if (billed) {
+			logger.info(">>>>>>>>>>> SET BILLED {}", billed);
+			//update.setBillingAccount(applied.getBillingAccount());
+			//update.setBill(applied.getBill());
+		} else {
+			logger.info(">>>>>>>>>>> SET BILLED {}", billed);
+			update.setBillingAccount(applied.getBillingAccount());
+			//update.setBill(null);
+		}
+		
+		
 		logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
 
 		return appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
