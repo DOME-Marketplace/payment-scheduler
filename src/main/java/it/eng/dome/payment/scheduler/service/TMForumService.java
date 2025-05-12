@@ -40,7 +40,13 @@ public class TMForumService implements InitializingBean {
 		
 		AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
 		
-		return updateAppliedCustomerBillingRate(applied);
+		if (applied != null) {
+			return updateAppliedCustomerBillingRate(applied);
+		}else {
+			logger.info("Couldn't found the applied with id: {}", appliedId);
+			return false;	
+		}
+		
 	}
 	
 	
@@ -62,8 +68,7 @@ public class TMForumService implements InitializingBean {
 		
 		String idCustomerBill = appliedApis.createCustomerBill(customerBill);
 		if (idCustomerBill != null) {
-			// create BillRef		
-			logger.info("Preparing the BillRef");
+			// Creating the BillRef		
 			BillRef bill = new BillRef();
 			bill.setId(idCustomerBill);
 			bill.setHref(idCustomerBill);
@@ -80,7 +85,7 @@ public class TMForumService implements InitializingBean {
 			return appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
 			
 		} else {
-			logger.warn("CustomerBill cannot be null");
+			logger.error("Cannot be create the CustomerBill");
 			return false;
 		}
 	}
@@ -114,20 +119,12 @@ public class TMForumService implements InitializingBean {
 		logger.debug("Creating an AppliedCustomerBillingRateUpdate object to set isBilled for the AppliedCustomerBillingRate with id: {}", applied.getId());	
 		AppliedCustomerBillingRateUpdate update = new AppliedCustomerBillingRateUpdate();
 		update.setIsBilled(billed);
-		//update.setBillingAccount(applied.getBillingAccount());
-		
-		//TODO is billed = true non è richiesto setBillingAccount
-		if (billed) {
-			logger.info(">>>>>>>>>>> SET BILLED {}", billed);
-			//update.setBillingAccount(applied.getBillingAccount());
-			//update.setBill(applied.getBill());
-		} else {
-			logger.info(">>>>>>>>>>> SET BILLED {}", billed);
+
+		if (!billed) { // if isBilled = false -> need to reset the BillingAccount
+			logger.debug("Required to reset the BillingAccount for AppliedCustomerBillingRateUpdate if isBilled = {}", billed);
 			update.setBillingAccount(applied.getBillingAccount());
-			//update.setBill(null);
 		}
-		
-		
+				
 		logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
 
 		return appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
