@@ -1,22 +1,30 @@
 package it.eng.dome.payment.scheduler.dto;
 
+import java.util.List;
+
 public class PaymentStatus {
 	
-	private String paymentId;
-	private String status;
-	
-	public String getPaymentId() {
-		return paymentId;
+	private String paymentExternalId;
+	private String state;
+	private List<String> paymentItemExternalIds;
+		
+	public String getPaymentExternalId() {
+		return paymentExternalId;
 	}
-	public void setPaymentId(String paymentId) {
-		this.paymentId = paymentId;
+	public void setPaymentExternalId(String paymentExternalId) {
+		this.paymentExternalId = paymentExternalId;
 	}
-	public String getStatus() {
-		return status;
+	public String getState() {
+		return state;
 	}
-	public void setStatus(String status) {
-		this.status = status;
+	public void setState(String state) {
+		this.state = state;
+	}
+	public List<String> getPaymentItemExternalIds() {
+		return paymentItemExternalIds;
+	}
+	public void setPaymentItemExternalIds(List<String> paymentItemExternalIds) {
+		this.paymentItemExternalIds = paymentItemExternalIds;
 	}
 
-	
 }

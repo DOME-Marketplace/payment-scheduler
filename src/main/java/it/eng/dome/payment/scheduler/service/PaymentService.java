@@ -244,7 +244,7 @@ public class PaymentService implements InitializingBean {
 				
 				return true;
 			}else {
-				logger.error("Error in the EG Payment Server");
+				logger.error("Error: The response provided by EG Payment Gateway cannot be useful to update the AppliedCustomerBillingRate.");
 				return false;
 			}
 		} else {
@@ -358,7 +358,7 @@ public class PaymentService implements InitializingBean {
 		if (tmforumService.updateAppliedCustomerBillingRate(applied)) { // set isBilled = true and add CustomerBill (BillRef)
 			logger.info("The appliedCustomerBillingRateId {} has been updated successfully", applied.getId());
 		} else {
-			logger.error("Couldn't update appliedCustomerBillingRate in TMForum");
+			logger.error("Couldn't update appliedCustomerBillingRate {} in TMForum", applied.getId());
 		}	
 	}
 
@@ -367,7 +367,7 @@ public class PaymentService implements InitializingBean {
 		if (tmforumService.setIsBilled(applied, true)) { // set isBilled = true
 			logger.info("IsBilled has been updated successfully for the appliedCustomerBillingRateId {}", applied.getId());
 		} else {
-			logger.error("Couldn't set isBilled for the appliedCustomerBillingRate in TMForum");
+			logger.error("Couldn't set isBilled for the appliedCustomerBillingRate {} in TMForum", applied.getId());
 		}	
 	}
 	
