@@ -21,7 +21,7 @@ public class PaymentTask {
 	protected PaymentService paymentService;
 
 	@Scheduled(cron = "${scheduling.cron}")
-	public void paymentCycleTask() throws Exception {
+	public void paymentCycleTask() {
 		logger.info("Scheduling the payment cycle process at {}", PaymentDateUtils.dateformat.format(new Date()));
 
 		paymentService.payments();

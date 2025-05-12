@@ -31,7 +31,6 @@ import it.eng.dome.payment.scheduler.util.ProviderType;
 import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
-import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 
 
@@ -66,10 +65,8 @@ public class PaymentService implements InitializingBean {
 	
 	/**
 	 * Main method called by PaymentScheduler service (in the PaymentTask class)
-	 * 
-	 * @throws ApiException
 	 */
-	public void payments() throws ApiException {
+	public void payments() {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 
 		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null);
@@ -144,7 +141,7 @@ public class PaymentService implements InitializingBean {
 	        	}
 	        }
 	        
-	        logger.info("The payment process scheduled has been terminated successfully at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
+	        logger.info("The payment process scheduled has been terminated at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 			
 		}else {
 			logger.warn("List of AppliedCustomerBillingRate is empty");
