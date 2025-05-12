@@ -43,7 +43,7 @@ public class TMForumService implements InitializingBean {
 		if (applied != null) {
 			return updateAppliedCustomerBillingRate(applied);
 		}else {
-			logger.info("Cannot found the applied with id: {}", appliedId);
+			logger.info("Cannot found the applied with id: {} to add the CustomerBill", appliedId);
 			return false;	
 		}
 		
@@ -99,9 +99,15 @@ public class TMForumService implements InitializingBean {
 	 */
 	public boolean setIsBilled(String appliedId, boolean billed) {
 
-		logger.info("Set isBilled for appliedId: {}", appliedId);		
+		logger.info("Set isBilled = {} for appliedId: {}", billed, appliedId);		
 		AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
-		return setIsBilled(applied, billed);
+		
+		if (applied != null) {
+			return setIsBilled(applied, billed);
+		}else {
+			logger.info("Cannot found the applied with id: {} to set isBilled attribute", appliedId);
+			return false;	
+		}
 	}
 	
 	
