@@ -2,6 +2,7 @@ package it.eng.dome.payment.scheduler.controller;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -42,31 +43,37 @@ public class PaymentNotifyController {
 		if (jwtToken != null) {
 			DecodedJWT jwt = JWT.decode(jwtToken);
 
-			long expired = jwt.getClaim("exp").asLong();
-			
-			if (!isTokenExpired(expired)) { // verify if token is not expired
+			long expired = jwt.getClaim("exp").asLong();			
+			// verify if token is not expired
+			if (!isTokenExpired(expired)) { 
 				
 				String iss = jwt.getClaim("iss").asString();
+				// verify if iss is compliant
 				if (issuer.equalsIgnoreCase(iss)) {
 					
 					Status statusEnum = Status.valueOf(paymentStatus.getState().toUpperCase());
 					List<String> appliedIds = paymentStatus.getPaymentItemExternalIds();
 					
 					logger.info("Handling {} payment status with {} applied", statusEnum.name(), appliedIds.size());
-					handlePaymentStatus(statusEnum, appliedIds);
+					List<String> appliedNotUpdated = handlePaymentStatus(statusEnum, appliedIds);
+
+					if (appliedNotUpdated.size() > 0) {
+						logger.error("The following {} applied couldn't be updated: {}", appliedIds.size(), String.join(", ", appliedNotUpdated));
+						return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", "Some applied couldn't be updated: " + String.join(", ", appliedNotUpdated)));
+					}
 					
 				} else {
 					logger.error("The token provided in the header is not valid");
-					return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("Error", "Token is not valid"));
+					return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token is not valid"));
 				}
 			} else {
 				logger.error("Token is expired");
-				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("Error", "Token is expired"));
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token is expired"));
 			}			
 			
 		} else {
 			logger.error("Cannot retrieve the token from header: {}", authHeader);
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("Error", "Token not found in the Header"));
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token not found in the Header"));
 		}
 
 		return ResponseEntity.noContent().build();
@@ -81,28 +88,20 @@ public class PaymentNotifyController {
 	
 	
 	private boolean isTokenExpired(long exp) {
-		/*
-		Instant expiration = Instant.ofEpochSecond(exp);
-		Instant now = Instant.now();
-		
-		Instant expirationAfter = expiration.plus(Duration.ofMinutes(5));
-		*/
-		
-		// adjustment of time
 		
         Instant expInstant = Instant.ofEpochSecond(exp);
-        logger.debug("Token time expires: {}", expInstant);
         Instant now = Instant.now();
-        logger.debug("Current time server: {}", now);
-
+        logger.debug("Token time expires: {} - Current time server: {}", expInstant, now);
+        
         Duration offset = Duration.between(now, expInstant);
-        logger.debug("Difference minutes: {}", offset.toMinutes());
+        logger.debug("Difference in minutes: {}", offset.toMinutes());
  		
         if (now.isAfter(expInstant)) {
-        	logger.info("Token expired at: {}", expInstant);
+        	// token expired
 		    return true;
         } else {
-        	logger.info("Token is still valid");
+        	// token is still valid"
+        	logger.debug("Token has {} minutes remaining until it expires", offset.toMinutes());
  		    return false;
  		}
 	}
@@ -112,18 +111,21 @@ public class PaymentNotifyController {
 	    FAILED
 	}
 	
-	private void handlePaymentStatus(Status status, List<String> applied) {
+	private List<String> handlePaymentStatus(Status status, List<String> applied) {
 	    switch (status) {
 	        case SUCCEEDED:
-	            handleStatusSucceeded(applied);
-	            break;
+	            return handleStatusSucceeded(applied);
 	        case FAILED:
-	            handleStatusFailed(applied);
-	            break;
+	            return handleStatusFailed(applied);
 	    }
+	    
+		return new ArrayList<String>();
 	}
 	
-	private void handleStatusSucceeded(List<String> applied) {
+	private List<String> handleStatusSucceeded(List<String> applied) {
+		
+		// return the appliedIds that cannot be found (not updated)
+		List<String> appliedIdsNotSucceeded = new ArrayList<String>();
 		
 		for (String id : applied) {
 			
@@ -131,20 +133,31 @@ public class PaymentNotifyController {
 				// set isBilled = true and add CustomerBill (BillRef) to applied
 				logger.info("The appliedCustomerBillingRateId {} has been updated successfully", id);
 			} else {
+				// add appliedId in the list
+				appliedIdsNotSucceeded.add(id);
 				logger.error("Couldn't update appliedCustomerBillingRate {} in TMForum", id);
 			}	
 		}
+		
+		return appliedIdsNotSucceeded;
 	}
 	
-	private void handleStatusFailed(List<String> applied) {
+	private List<String> handleStatusFailed(List<String> applied) {
+		
+		// return the appliedIds that cannot be found (not updated)
+		List<String> appliedIdsNotBilled = new ArrayList<String>();
 
 		for (String id : applied) {
 			
 			if (tmforumService.setIsBilled(id, false)) { // set isBilled = false
 				logger.info("IsBilled has been updated successfully for the appliedCustomerBillingRateId {}", id);
 			} else {
+				// add appliedId in the list
+				appliedIdsNotBilled.add(id);
 				logger.error("Couldn't set isBilled for the appliedCustomerBillingRate {} in TMForum", id);
 			}	
 		}
+		
+		return appliedIdsNotBilled;
 	}
 }

@@ -43,7 +43,7 @@ public class TMForumService implements InitializingBean {
 		if (applied != null) {
 			return updateAppliedCustomerBillingRate(applied);
 		}else {
-			logger.info("Couldn't found the applied with id: {}", appliedId);
+			logger.info("Cannot found the applied with id: {}", appliedId);
 			return false;	
 		}
 		
