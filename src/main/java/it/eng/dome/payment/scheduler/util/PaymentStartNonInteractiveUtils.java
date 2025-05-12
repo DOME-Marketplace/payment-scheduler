@@ -15,12 +15,11 @@ import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 public class PaymentStartNonInteractiveUtils {
 	
 
-	public static PaymentStartNonInteractive getPaymentStartNonInteractive(String paymentPreAuthorizationExternalId, String customerId, String customerOrganizationId) {
+	public static PaymentStartNonInteractive getPaymentStartNonInteractive(String paymentPreAuthorizationExternalId, String customerOrganizationId) {
 		
 		BaseAttributes baseAttributes = new BaseAttributes();
 
 		baseAttributes.setExternalId(UUID.randomUUID().toString()); // ExternalId must be unique, can be random or sequential
-		baseAttributes.setCustomerId(customerId);
 		baseAttributes.setCustomerOrganizationId(customerOrganizationId);
 		baseAttributes.setInvoiceId(getInvoice());
 

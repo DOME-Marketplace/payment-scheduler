@@ -68,10 +68,8 @@ public class TestAggregatePaymentTime {
         	System.out.println("key -> " + key);
         	
         	if (!payments.containsKey(key)) {
-        		// use this customerId
-        		String customerId = "1"; 
         		
-        		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId);
+        		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerOrganizationId);
         		System.out.println("create payload");
         		payments.put(key, payment);
             }

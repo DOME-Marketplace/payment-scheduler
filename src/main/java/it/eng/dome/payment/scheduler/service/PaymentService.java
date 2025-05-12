@@ -159,11 +159,8 @@ public class PaymentService implements InitializingBean {
 	 * Create the payload for StartNonInteractive call
 	 */
 	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, String customerOrganizationId, List<AppliedCustomerBillingRate> applied) {
-		
-		//FIXME - use customerId empty - this attribute must be removed in the future
-		String customerId = "0"; 
 				
-		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerId, customerOrganizationId);
+		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerOrganizationId);
 		
 		for (AppliedCustomerBillingRate apply : applied) {
 			//logger.debug("AppliedCustomerBillingRate payload: {}", apply.toJson());

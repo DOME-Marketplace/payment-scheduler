@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class BaseAttributes {
 
 	private String externalId;
-	private String customerId;
 	private String customerOrganizationId;
 	private String invoiceId;
 	private List<PaymentItem> paymentItems;
@@ -19,14 +18,6 @@ public class BaseAttributes {
 
 	public void setExternalId(String externalId) {
 		this.externalId = externalId;
-	}
-
-	public String getCustomerId() {
-		return customerId;
-	}
-
-	public void setCustomerId(String customerId) {
-		this.customerId = customerId;
 	}
 
 	public String getCustomerOrganizationId() {
@@ -68,7 +59,7 @@ public class BaseAttributes {
 
 	@Override
 	public String toString() {
-		return "BaseAttributes [externalId=" + externalId + ", customerId=" + customerId + ", customerOrganizationId="
-				+ customerOrganizationId + ", invoiceId=" + invoiceId + ", paymentItems=" + paymentItems + "]";
+		return "BaseAttributes [externalId=" + externalId + ", customerOrganizationId=" + customerOrganizationId 
+				+ ", invoiceId=" + invoiceId + ", paymentItems=" + paymentItems + "]";
 	}
 }
