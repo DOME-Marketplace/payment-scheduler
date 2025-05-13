@@ -1,7 +1,7 @@
 
 # Spring Configuration
 server: 
-  port: 8080
+  port: 8480
   servlet:
     context-path:  ${BILLING_PREFIX:/}
 
@@ -14,7 +14,7 @@ build:
 
 # Scheduling Task Configuration  
 scheduling:
-  cron: ${SCHEDULING_CRON_JOB_TASK:0 30 0,4,8,12,16,20 * * ?} 
+  cron: ${SCHEDULING_CRON_JOB_TASK:0 30 */3 * * ?} 
 
 # Logging Configuration
 logging:
