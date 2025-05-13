@@ -96,7 +96,7 @@ public class PaymentService implements InitializingBean {
 			Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<String, List<AppliedCustomerBillingRate>>();
 	
 			for (AppliedCustomerBillingRate applied : notBilled) {
-				//logger.debug("AppliedCustomerBillingRate payload to be billed: {}", applied.toJson());
+				logger.debug("AppliedCustomerBillingRate payload to be billed: {}", applied.toJson());
 				
 				// check if exist the product
 				if(applied.getProduct() != null) { 
@@ -113,6 +113,8 @@ public class PaymentService implements InitializingBean {
 			        	// add in the ArrayList the AppliedCustomerBillingRate
 			        	aggregates.computeIfAbsent(key, k -> new ArrayList<>()).add(applied);
 		        	}
+				} else {
+					logger.warn("No product is provided for appliedId: {}", applied.getId());
 				}
 			}
 			
