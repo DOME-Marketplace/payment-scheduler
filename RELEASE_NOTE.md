@@ -2,7 +2,7 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
-### <code>0.1.0c</code> :calendar: 12/05/2025
+### <code>0.1.0d</code> :calendar: 13/05/2025
 **Improvements**
 * Add **TMForumService** class to manage AppliedCustomerBillRate object.
 * Verify **token** validity by using `ext` (expired) **claim** of JWT.
