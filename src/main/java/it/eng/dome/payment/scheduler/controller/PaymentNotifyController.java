@@ -60,8 +60,9 @@ public class PaymentNotifyController {
 						List<String> appliedNotUpdated = handlePaymentStatus(statusEnum, appliedIds);
 	
 						if (!appliedNotUpdated.isEmpty()) {
-							logger.error("The following {} applied couldn't be updated: {}", appliedIds.size(), String.join(", ", appliedNotUpdated));
-							return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", "Some applied couldn't be updated: " + String.join(", ", appliedNotUpdated)));
+							String msg = "The following " + appliedIds.size() + " applied cannot be updated: " + String.join(", ", appliedNotUpdated);
+							logger.error(msg);
+							return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", msg));
 						}
 						
 					} else {
