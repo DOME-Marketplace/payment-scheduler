@@ -38,50 +38,55 @@ public class PaymentNotifyController {
 
 	@PostMapping("/notify")
 	public ResponseEntity<Object> notifyPayment(@RequestHeader("Authorization") String authHeader, @RequestBody PaymentStatus paymentStatus) {
-		
+
 		String jwtToken = getBearerToken(authHeader);
+
 		if (jwtToken != null) {
-			DecodedJWT jwt = JWT.decode(jwtToken);
-
-			long expired = jwt.getClaim("exp").asLong();			
-			// verify if token is not expired
-			if (!isTokenExpired(expired)) { 
-				
-				String iss = jwt.getClaim("iss").asString();
-				// verify if iss is compliant
-				if (issuer.equalsIgnoreCase(iss)) {
+			try {
+				DecodedJWT jwt = JWT.decode(jwtToken);
+	
+				long expired = jwt.getClaim("exp").asLong();			
+				// verify if token is not expired
+				if (!isTokenExpired(expired)) { 
 					
-					Status statusEnum = Status.valueOf(paymentStatus.getState().toUpperCase());
-					List<String> appliedIds = paymentStatus.getPaymentItemExternalIds();
-					
-					logger.info("Handling {} payment status with {} applied", statusEnum.name(), appliedIds.size());
-					List<String> appliedNotUpdated = handlePaymentStatus(statusEnum, appliedIds);
-
-					if (!appliedNotUpdated.isEmpty()) {
-						logger.error("The following {} applied couldn't be updated: {}", appliedIds.size(), String.join(", ", appliedNotUpdated));
-						return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", "Some applied couldn't be updated: " + String.join(", ", appliedNotUpdated)));
+					String iss = jwt.getClaim("iss").asString();
+					// verify if iss is compliant
+					if (issuer.equalsIgnoreCase(iss)) {
+						
+						Status statusEnum = Status.valueOf(paymentStatus.getState().toUpperCase());
+						List<String> appliedIds = paymentStatus.getPaymentItemExternalIds();
+						
+						logger.info("Handling {} payment status with {} applied", statusEnum.name(), appliedIds.size());
+						List<String> appliedNotUpdated = handlePaymentStatus(statusEnum, appliedIds);
+	
+						if (!appliedNotUpdated.isEmpty()) {
+							logger.error("The following {} applied couldn't be updated: {}", appliedIds.size(), String.join(", ", appliedNotUpdated));
+							return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", "Some applied couldn't be updated: " + String.join(", ", appliedNotUpdated)));
+						}
+						
+					} else {
+						logger.error("The token provided in the header is not valid");
+						return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token is not valid"));
 					}
-					
 				} else {
-					logger.error("The token provided in the header is not valid");
-					return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token is not valid"));
-				}
-			} else {
-				logger.error("Token is expired");
-				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token is expired"));
-			}			
-			
+					logger.error("Token is expired");
+					return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token is expired"));
+				}			
+			}catch(Exception e) {
+				logger.error("Error: {}", e.getMessage());
+				return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", e.getMessage()));
+			}
 		} else {
-			logger.error("Cannot retrieve the token from header: {}", authHeader);
+			logger.error("Couldn't find a correct token from the header");
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token not found in the Header"));
 		}
 
 		return ResponseEntity.noContent().build();
 	}
 	
-	private String getBearerToken(String authHeader) {       
+	private String getBearerToken(String authHeader) {   
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7);
+            return authHeader.substring(7).trim();
         }
         return null;
     }
