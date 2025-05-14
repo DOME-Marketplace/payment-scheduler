@@ -41,10 +41,9 @@ public class PaymentSchedulerController {
 	@RequestMapping(value = "/start", method = RequestMethod.POST)
 	public ResponseEntity<String> startScheduler() throws Throwable {
 
-		logger.info("Start the scheduler task via REST APIs for payments");
+		logger.info("Start the scheduler task via REST APIs for payments at: {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 
-		String response = "Starting the payments at " + OffsetDateTime.now().format(PaymentDateUtils.formatter);
-		paymentService.payments();
+		String response = paymentService.payments();
 		return new ResponseEntity<String>(response, HttpStatus.OK);
 	}
 

@@ -56,9 +56,9 @@ public class StartPayment {
 	
 				// decode the response
 				DecodedJWT jwt = JWT.decode(responseJwt);
-				logger.debug("Payload: {}", jwt.getPayload());
-				logger.info("paymentExternalId: {}", jwt.getClaim("paymentExternalId").asString());
-				logger.info("paymentPreAuthorizationExternalId: {}", jwt.getClaim("paymentPreAuthorizationExternalId").asString());
+				logger.debug("Payload Non-Interactive: {}", jwt.getPayload());
+				//logger.info("paymentExternalId: {}", jwt.getClaim("paymentExternalId").asString());
+				//logger.info("paymentPreAuthorizationExternalId: {}", jwt.getClaim("paymentPreAuthorizationExternalId").asString());
 				
 				ObjectMapper objectMapper = new ObjectMapper();
 				return objectMapper.readValue(decode(jwt.getPayload()), EGPaymentResponse.class);

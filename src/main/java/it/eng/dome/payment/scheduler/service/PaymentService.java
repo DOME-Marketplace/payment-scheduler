@@ -66,11 +66,11 @@ public class PaymentService implements InitializingBean {
 	/**
 	 * Main method called by PaymentScheduler service (in the PaymentTask class)
 	 */
-	public void payments() {
+	public String payments() {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 
 		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null);
-		payments(appliedList);
+		return payments(appliedList);
 	}
 	
 	/**
@@ -94,12 +94,13 @@ public class PaymentService implements InitializingBean {
 			
 			//aggregate - payment time
 			Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<String, List<AppliedCustomerBillingRate>>();
+			List<String> noCompliantBills = new ArrayList<String>();
 	
 			for (AppliedCustomerBillingRate applied : notBilled) {
 				//logger.debug("AppliedCustomerBillingRate payload to be billed: {}", applied.toJson());
-				
+								
 				// check if exist the product
-				if(applied.getProduct() != null) { 
+				if(applied.getProduct() != null) {
 					logger.info("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
 					
 					// SET keys with multiple attributes for the map<> aggregates
@@ -112,10 +113,18 @@ public class PaymentService implements InitializingBean {
 
 			        	// add in the ArrayList the AppliedCustomerBillingRate
 			        	aggregates.computeIfAbsent(key, k -> new ArrayList<>()).add(applied);
+		        	} else {
+		        		noCompliantBills.add(applied.getId());
+		        		logger.warn("Couldn't found the paymentPreAuthorizationExternalId attribute from ProductCharacteristic");
 		        	}
+				} else {	
+					noCompliantBills.add(applied.getId());
+					 // product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic
+					logger.warn("Cannot found the product attribute for appliedId: {}", applied.getId());
+					logger.warn("Product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic");
 				}
 			}
-			
+		
 			// payment
 			logger.debug("Number of aggregates applied to pay: {}", aggregates.size());
 	        for (Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
@@ -141,6 +150,12 @@ public class PaymentService implements InitializingBean {
 	        	}
 	        }
 	        
+			// report not compliant bills - applied not billed yet
+	        if (!noCompliantBills.isEmpty()) {
+	        	logger.info("Number of non-compliant applied: {}", noCompliantBills.size());
+	        	logger.info("The following applied cannot be billed: {}", String.join(", ", noCompliantBills));
+	        }
+			
 	        logger.info("The payment process scheduled has been terminated at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 			
 		}else {
@@ -207,19 +222,14 @@ public class PaymentService implements InitializingBean {
 				List<Payout> payoutList = egpayment.getPayoutList();
 				Map<String, AppliedCustomerBillingRate> applyMap = applied.stream().collect(Collectors.toMap(AppliedCustomerBillingRate::getId, Function.identity()));
 				
+				logger.info("Updating {} applied in the PayoutList", payoutList.size());
+				
 				for (Payout payout : payoutList) {
 					logger.info("Get payout status: {}", payout.getState());
 				
 					// Get the status
 					Status statusEnum = Status.valueOf(payout.getState().toUpperCase());
 					String applyId = payout.getPaymentItemExternalId();
-					
-					//TODO - To delete - workaround to get applyId - we are waiting for the paymentItemExternalId in the Payout  
-					if (applyId == null && applied.size() == 1) {
-						logger.debug("Workaround - we are waiting for the paymentItemExternalId in the Payout");
-						logger.info("Get applyId from list because is only one!");
-						applyId = applied.get(0).getId();
-					}				
 										
 					if (applyId != null) {
 						logger.info("Get applyId: {}", applyId);
@@ -230,9 +240,13 @@ public class PaymentService implements InitializingBean {
 						handlePaymentStatus(statusEnum, appliedCustomerBillingRate);
 						
 					} else {
+						//TODO - Manage if cannot find the paymentItemExternalId -> Payment state = PROCESSED => how it must update the appliedCustomerBillingRate
+												
 						logger.warn("Payout: {}", payout.toJson());
-						logger.warn("Cannot find the paymentItemExternalId from Payout. It's the applyId");
-						return false;
+						logger.warn("Payout state: {}", statusEnum);
+						
+						// cannot manage the appliedCustomerBillingRate. No applyId (paymentItemExternalId) provided
+						logger.error("Cannot find the paymentItemExternalId from Payout. The paymentItemExternalId is the applyId");
 					}
 				}
 				

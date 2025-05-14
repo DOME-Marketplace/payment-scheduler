@@ -3,7 +3,7 @@
 server: 
   port: 8480
   servlet:
-    context-path:  ${BILLING_PREFIX:/}
+    context-path: ${BILLING_PREFIX:/}
 
 application:
   name: "@project.artifactId@"
