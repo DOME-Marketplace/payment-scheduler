@@ -13,9 +13,6 @@
 * Payment management of Payment Gateway response based on statuses `PROCESSED`, `FAILED`, `PENDING` in the **scheduling process**. 
 * Payment management of Payment Gateway based on statuses `SUCCEEDED`, `FAILED` in the **notification process**. 
 
-**WIP**
-* TODO - Remove workaround to get applyId - we are waiting for the paymentItemExternalId in the Payout 
-
 
 ### <code>0.1.0</code> :calendar: 06/05/2025
 **Improvements**
