@@ -2,11 +2,12 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
-### <code>0.1.0e</code> :calendar: 13/05/2025
+### <code>0.1.0e</code> :calendar: 14/05/2025
 **Improvements**
 * Add **TMForumService** class to manage AppliedCustomerBillRate object.
 * Verify **token** validity by using `ext` (expired) **claim** of JWT.
 * Remove the `customerId` attribute from Payment payload to send to Payment Gateway.
+* Add new `paymentMethodType` attribute in **EGPaymentResponse - Payout** class.
 
 **Feature**
 * Payment management of Payment Gateway response based on statuses `PROCESSED`, `FAILED`, `PENDING` in the **scheduling process**. 
