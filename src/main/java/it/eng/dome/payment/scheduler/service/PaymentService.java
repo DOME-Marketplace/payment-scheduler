@@ -122,6 +122,8 @@ public class PaymentService implements InitializingBean {
 					 // product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic
 					logger.warn("Cannot found the product attribute for appliedId: {}", applied.getId());
 					logger.warn("Product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic");
+					
+					logger.warn("The applied {} cannot be update", applied.getId());
 				}
 			}
 		
