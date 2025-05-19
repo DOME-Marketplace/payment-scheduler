@@ -254,7 +254,7 @@ public class PaymentService implements InitializingBean {
 				
 				return true;
 			}else {
-				logger.error("Error: The response provided by EG Payment Gateway cannot be useful to update the AppliedCustomerBillingRate.");
+				logger.error("Error: EG Payment Gateway couldn't pay the applied: {}", applied.stream().map(AppliedCustomerBillingRate::getId).collect(Collectors.joining(",")));
 				return false;
 			}
 		} else {
@@ -268,8 +268,8 @@ public class PaymentService implements InitializingBean {
 	 * Retrieve the paymentPreAuthorizationExternalId from the productCharacteristic 
 	 */
 	private String getPaymentPreAuthorizationExternalId(String productId) {
-
-		String paymentPreAuthorizationExternalId = null;
+		
+		final String PAYMENT_PRE_AUTHORIZATION = "paymentPreAuthorization";
 
 		if (productId != null) {
 
@@ -277,13 +277,17 @@ public class PaymentService implements InitializingBean {
 			if (product != null) {
 				List<Characteristic> prodChars = product.getProductCharacteristic();
 
-				// TODO Manage exception
 				if (prodChars != null && !prodChars.isEmpty()) {
 					for (Characteristic c : prodChars) {
-						if (c.getName().trim().equalsIgnoreCase("paymentPreAuthorizationExternalId")) {
-							paymentPreAuthorizationExternalId = c.getValue().toString();
-							logger.info("Found the paymentPreAuthorizationId: {}", paymentPreAuthorizationExternalId);
-							return paymentPreAuthorizationExternalId;
+						if (c.getName().trim().startsWith(PAYMENT_PRE_AUTHORIZATION)) {		
+							logger.info("Found the attribute {} in the ProductCharacteristic", c.getName());
+							if (c.getValue() != null) {								
+								logger.info("Found the {} value: {}", c.getName(), c.getValue().toString());
+								return c.getValue().toString();
+							} else {
+								logger.error("The {} is null from product {}", c.getName(), productId);
+								return null;
+							}
 						}
 					}
 				}				
@@ -291,7 +295,7 @@ public class PaymentService implements InitializingBean {
 		}
 
 		logger.error("Couldn't retrieve the paymentPreAuthorizationExternalId from product {}", productId);
-		return paymentPreAuthorizationExternalId;
+		return null;
 	}
 	
 	/*
