@@ -2,6 +2,11 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>0.2.0</code> :calendar: 23/05/2025
+**Improvements**
+* Use **filter** features for retrieving the **AppliedCustomerBillingRate** with `isBilled = false` and `type = recurring` query string params (**Brokerage Utils** version `2.1.0`).
+
+
 ### <code>0.1.1</code> :calendar: 20/05/2025
 **Improvements**
 * Add **TMForumService** class to manage AppliedCustomerBillRate object.

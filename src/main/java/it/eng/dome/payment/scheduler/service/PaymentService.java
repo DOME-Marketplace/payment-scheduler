@@ -68,8 +68,13 @@ public class PaymentService implements InitializingBean {
 	 */
 	public String payments() {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
+		
+		// add filter for AppliedCustomerBillingRate 
+		Map<String, String> filter = new HashMap<String, String>();
+		filter.put("isBilled", "false"); // isBilled = false
+		filter.put("rateType", "recurring"); // type = recurring		
 
-		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null);
+		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null, filter);		
 		return payments(appliedList);
 	}
 	
@@ -83,25 +88,18 @@ public class PaymentService implements InitializingBean {
 		int num = 0;
 		
 		if (appliedList != null && !appliedList.isEmpty()) {
-			logger.debug("Total number of AppliedCustomerBillingRate found: {}", appliedList.size());
-			
-			// filtered appliedList to get only bill with isBilled = false && type recurring 
-			List<AppliedCustomerBillingRate> notBilled = appliedList.stream()
-					.filter(applied -> !applied.getIsBilled() && applied.getType().toLowerCase().contains("recurring"))
-                    .collect(Collectors.toList());
-			
-			logger.info("Number of AppliedCustomerBillingRate ready for billing: {}", notBilled.size());
+			logger.debug("Number of applied ready for billing: {}", appliedList.size());
 			
 			//aggregate - payment time
 			Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<String, List<AppliedCustomerBillingRate>>();
-			List<String> noCompliantBills = new ArrayList<String>();
+			List<String> noComplaintBills = new ArrayList<String>();
 	
-			for (AppliedCustomerBillingRate applied : notBilled) {
+			for (AppliedCustomerBillingRate applied : appliedList) {
 				//logger.debug("AppliedCustomerBillingRate payload to be billed: {}", applied.toJson());
 								
 				// check if exist the product
 				if(applied.getProduct() != null) {
-					logger.info("AppliedCustomerBillingRate ID: {} must be billed", applied.getId());
+					logger.info("AppliedId {} must be billed", applied.getId());
 					
 					// SET keys with multiple attributes for the map<> aggregates
 		        	String endDate = getEndDate(applied);
@@ -114,11 +112,11 @@ public class PaymentService implements InitializingBean {
 			        	// add in the ArrayList the AppliedCustomerBillingRate
 			        	aggregates.computeIfAbsent(key, k -> new ArrayList<>()).add(applied);
 		        	} else {
-		        		noCompliantBills.add(applied.getId());
+		        		noComplaintBills.add(applied.getId());
 		        		logger.warn("Couldn't found the paymentPreAuthorizationExternalId attribute from ProductCharacteristic");
 		        	}
 				} else {	
-					noCompliantBills.add(applied.getId());
+					noComplaintBills.add(applied.getId());
 					 // product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic
 					logger.warn("Cannot found the product attribute for appliedId: {}", applied.getId());
 					logger.warn("Product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic");
@@ -152,16 +150,16 @@ public class PaymentService implements InitializingBean {
 	        	}
 	        }
 	        
-			// report not compliant bills - applied not billed yet
-	        if (!noCompliantBills.isEmpty()) {
-	        	logger.info("Number of non-compliant applied: {}", noCompliantBills.size());
-	        	logger.info("The following applied cannot be billed: {}", String.join(", ", noCompliantBills));
+			// report not complaint bills - applied not billed yet
+	        if (!noComplaintBills.isEmpty()) {
+	        	logger.info("Number of non-complaint applied: {}", noComplaintBills.size());
+	        	logger.info("The following applied cannot be billed: {}", String.join(", ", noComplaintBills));
 	        }
 			
 	        logger.info("The payment process scheduled has been terminated at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 			
 		}else {
-			logger.warn("List of AppliedCustomerBillingRate is empty");
+			logger.warn("The list of AppliedCustomerBillingRate to be billed is empty");
 		}
 		
 		String response = "Number of payments executed: " + num;
@@ -182,10 +180,14 @@ public class PaymentService implements InitializingBean {
 			// Let's suppose applyId and productId <> NULL 
 			String productProviderExternalId = getProductProviderExternalId(apply.getProduct().getId());
 			
+			float amount = 0;
+			if (apply.getTaxExcludedAmount().getValue() != null) {
+				amount = apply.getTaxExcludedAmount().getValue().floatValue();
+			}
+			
 			if (productProviderExternalId != null) {
 			
-				PaymentItem paymentItem = new PaymentItem();
-	        	float amount = apply.getTaxExcludedAmount().getValue().floatValue();
+				PaymentItem paymentItem = new PaymentItem();	        	
 	        	paymentItem.setAmount(amount);
 	        	paymentItem.setCurrency("EUR");
 	        	paymentItem.setProductProviderExternalId(productProviderExternalId);

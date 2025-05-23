@@ -13,7 +13,7 @@
 		
 	<groupId>it.eng.dome.payment</groupId>
 	<artifactId>scheduler</artifactId>
-	<version>0.1.1</version>
+	<version>0.2.0</version>
 	<name>Payment Scheduler</name>
 	<description>Payment Scheduler for DOME project</description>
 	
@@ -43,13 +43,6 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
-        <!-- Brokerage Utils dependencies -->
-		<dependency>
-			<groupId>it.eng.dome.brokerage</groupId>
-			<artifactId>brokerage-utils</artifactId>
-			<version>[2.0.0, 3.0.0)</version>
-		</dependency>
-			
         <!-- Springdoc OpenAPI dependency -->
 	    <dependency>
 	        <groupId>org.springdoc</groupId>
@@ -62,18 +55,26 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 		
+        <!-- Brokerage Utils dependencies -->
+		<dependency>
+			<groupId>it.eng.dome.brokerage</groupId>
+			<artifactId>brokerage-utils</artifactId>
+			<version>[2.1.0, 2.2.0)</version>
+		</dependency>
+			
 		<!-- TMF678 Customer Bill -->
 		<dependency>
 			<groupId>it.eng.dome.tmforum-sdk</groupId>
 			<artifactId>tmf678-v4</artifactId>
-			<version>2.0.0</version>
+			<version>[2.1.0, 2.2.0)</version>
 		</dependency>
 		<!--  TMF637 Product Inventory Management  -->
 		<dependency>
 			<groupId>it.eng.dome.tmforum-sdk</groupId>
 			<artifactId>tmf637-v4</artifactId>
-			<version>2.0.0</version>
+			<version>[2.1.0, 2.2.0)</version>
 		</dependency>
+		
 		<!-- Auth0 -->
 		<dependency>
 			<groupId>com.auth0</groupId>
