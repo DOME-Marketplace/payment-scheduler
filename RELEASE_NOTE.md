@@ -2,7 +2,7 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
-### <code>0.2.0</code> :calendar: 23/05/2025
+### <code>1.2.0</code> :calendar: 26/05/2025
 **Improvements**
 * Use **filter** features for retrieving the **AppliedCustomerBillingRate** with `isBilled = false` and `type = recurring` query string params (**Brokerage Utils** version `2.1.0`).
 
