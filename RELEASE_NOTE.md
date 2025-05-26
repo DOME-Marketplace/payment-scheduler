@@ -4,6 +4,7 @@
 
 ### <code>1.2.0</code> :calendar: 26/05/2025
 **Improvements**
+* Set of `[2.1.0, 2.2.0)` version of `Brokerage Utils`.
 * Use **filter** features for retrieving the **AppliedCustomerBillingRate** with `isBilled = false` and `type = recurring` query string params (**Brokerage Utils** version `2.1.0`).
 
 
