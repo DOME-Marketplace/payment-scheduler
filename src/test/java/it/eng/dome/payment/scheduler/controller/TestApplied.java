@@ -31,7 +31,6 @@ public class TestApplied {
 	        }
 			
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -61,7 +60,6 @@ public class TestApplied {
 		try {
 			return new String(Files.readAllBytes(Paths.get(file)));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}

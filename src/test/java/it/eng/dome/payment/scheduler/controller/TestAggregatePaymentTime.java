@@ -38,7 +38,6 @@ public class TestAggregatePaymentTime {
 	        }
 			
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
         
@@ -108,7 +107,6 @@ public class TestAggregatePaymentTime {
 		try {
 			return new String(Files.readAllBytes(Paths.get(file)));
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}
