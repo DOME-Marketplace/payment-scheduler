@@ -50,7 +50,7 @@ public class PaymentNotifyController {
 				if (!isTokenExpired(expired)) { 
 					
 					String iss = jwt.getClaim("iss").asString();
-					// verify if iss is compliant
+					// verify if iss is complaint
 					if (issuer.equalsIgnoreCase(iss)) {
 						
 						Status statusEnum = Status.valueOf(paymentStatus.getState().toUpperCase());

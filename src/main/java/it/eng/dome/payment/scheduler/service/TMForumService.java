@@ -1,5 +1,8 @@
 package it.eng.dome.payment.scheduler.service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -12,6 +15,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateUpdate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
+import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 
 @Service
 public class TMForumService implements InitializingBean {
@@ -65,6 +69,16 @@ public class TMForumService implements InitializingBean {
 		customerBill.setBillingAccount(applied.getBillingAccount());
 		customerBill.setAmountDue(applied.getTaxIncludedAmount());
 		//TODO verify if it needs other attributes
+		
+		//check on RelatedParty if is null
+		List<RelatedParty> parties = new ArrayList<RelatedParty>();
+		if (applied.getRelatedParty() != null) {
+			logger.warn("Get num of RelatedParty from applied: {}", applied.getRelatedParty().size());
+			parties = appliedApis.getAppliedCustomerBillingRate(applied.getId(), null).getRelatedParty();
+		}
+		
+		//FIXME - applied list cannot provide all parties, but just one!!!
+		customerBill.setRelatedParty(/*applied.getRelatedParty()*/parties);
 		
 		String idCustomerBill = appliedApis.createCustomerBill(customerBill);
 		if (idCustomerBill != null) {
