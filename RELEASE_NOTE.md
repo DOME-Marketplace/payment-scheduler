@@ -2,6 +2,10 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>1.2.1</code> :calendar: 04/06/2025
+**BugFixing**
+* Set `server port = 8080` in the **application.yaml** for `Harbor`.
+
 
 ### <code>1.2.0</code> :calendar: 03/06/2025
 **Improvements**
