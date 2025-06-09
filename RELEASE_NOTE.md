@@ -2,9 +2,12 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
-### <code>1.2.1</code> :calendar: 04/06/2025
+### <code>1.2.1</code> :calendar: 09/06/2025 (WIP)
 **BugFixing**
 * Set `server port = 8080` in the **application.yaml** for `Harbor`.
+
+**Improvements**
+* Update of the `basePath` for building TMForum API URLs with or without **envoy** usage.
 
 
 ### <code>1.2.0</code> :calendar: 03/06/2025
