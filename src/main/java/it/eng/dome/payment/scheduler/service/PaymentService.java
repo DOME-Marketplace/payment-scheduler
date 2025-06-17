@@ -72,7 +72,7 @@ public class PaymentService implements InitializingBean {
 		// add filter for AppliedCustomerBillingRate 
 		Map<String, String> filter = new HashMap<String, String>();
 		filter.put("isBilled", "false"); // isBilled = false
-		filter.put("rateType", "recurring"); // type = recurring		
+		//filter.put("rateType", "recurring"); // type = recurring		
 
 		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null, filter);		
 		return payments(appliedList);
@@ -145,7 +145,7 @@ public class PaymentService implements InitializingBean {
 		        	PaymentStartNonInteractive payment = getPayloadStartNonInteractive(paymentPreAuthorizationExternalId, customerOrganizationId, applied);
 		        	
 		        	if (executePayment(payment, applied)) {
-		        		++num;
+		        		num = num + applied.size();
 		        	}
 	        	}else {
 	        		logger.error("Cannot build the Payment payload. The customerOrganizationId is null");
@@ -374,7 +374,7 @@ public class PaymentService implements InitializingBean {
 	private void handleStatusProcessed(AppliedCustomerBillingRate applied) {
 				
 		if (tmforumService.updateAppliedCustomerBillingRate(applied)) { // set isBilled = true and add CustomerBill (BillRef)
-			logger.info("The appliedCustomerBillingRateId {} has been updated successfully", applied.getId());
+			logger.info("The appliedCustomerBillingRateId {} with type {} has been updated successfully", applied.getId(), applied.getType());
 		} else {
 			logger.error("Couldn't update appliedCustomerBillingRate {} in TMForum", applied.getId());
 		}	
