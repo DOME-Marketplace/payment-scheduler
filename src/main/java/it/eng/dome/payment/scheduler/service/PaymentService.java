@@ -126,13 +126,15 @@ public class PaymentService implements InitializingBean {
 			}
 		
 			// payment
-			logger.debug("Number of aggregates applied to pay: {}", aggregates.size());
+			logger.debug("Size of list applied aggregates to pay: {}", aggregates.size());
+			int count = 0;
 	        for (Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
 	        	
 	        	List<AppliedCustomerBillingRate> applied = entry.getValue();
-	        	logger.debug("Num of applied in the aggregate: {}", applied.size());
-	        	String key = entry.getKey();
+	        	logger.debug("List applied aggregates[{}] - contains num of applied: {}", ++count, applied.size());
 	        	
+	        	String key = entry.getKey();
+	        		        	
 	        	// retrieve the paymentPreAuthorizationExternalId from key
 	        	String paymentPreAuthorizationExternalId = key.substring(0, key.indexOf(CONCAT_KEY));
 	        	
