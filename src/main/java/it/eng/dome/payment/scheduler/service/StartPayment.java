@@ -69,16 +69,16 @@ public class StartPayment {
 	
 			} else {
 				logger.error("Error in ResponseJwt: {}", response.getError().toJson());
-				//return null;
+				return null;
 				// TODO - remove byPassGateway and return null
-				return byPassGateway(payment.getBaseAttributes().getPaymentItems());
+				//return byPassGateway(payment.getBaseAttributes().getPaymentItems());
 			}
 				
 		}catch(Exception e) {
 			logger.error("Error: {}", e.getMessage());
-			//return null;
+			return null;
 			// TODO - remove byPassGateway and return null
-			return byPassGateway(payment.getBaseAttributes().getPaymentItems());
+			//return byPassGateway(payment.getBaseAttributes().getPaymentItems());
 		}
 	}
 	
