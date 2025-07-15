@@ -2,13 +2,16 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
-### <code>1.2.1</code> :calendar: 15/07/2025
-**BugFixing**
-* Set `server port = 8080` in the **application.yaml** for `Harbor`.
 
+### <code>1.2.2</code> :calendar: 14/07/2025
 **Improvements**
 * Update of the `basePath` for building TMForum API URLs with or without **envoy** usage.
 * Display `ENV VARs` in the Listener at beginning.
+
+
+### <code>1.2.1</code> :calendar: 04/06/2025
+**BugFixing**
+* Set `server port = 8080` in the **application.yaml** for `Harbor`.
 
 
 ### <code>1.2.0</code> :calendar: 03/06/2025
@@ -19,7 +22,6 @@
 
 **Feature**
 * Add RelatedParty in the **AppliedCustomerBillingRate** object.
-
 
 
 ### <code>0.1.1</code> :calendar: 20/05/2025
