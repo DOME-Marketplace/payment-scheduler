@@ -1,5 +1,6 @@
 package it.eng.dome.payment.scheduler.service;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +17,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateUpdate;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
+import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
 
 @Service
 public class TMForumService implements InitializingBean {
@@ -67,8 +69,11 @@ public class TMForumService implements InitializingBean {
 		//create a new CustomerBill to set in the AppliedCustomerBillingRate (BillRef)
 		CustomerBillCreate customerBill = new CustomerBillCreate();
 		customerBill.setBillingAccount(applied.getBillingAccount());
-		customerBill.setAmountDue(applied.getTaxIncludedAmount());
-		//TODO verify if it needs other attributes
+		customerBill.setBillDate(OffsetDateTime.now());
+		customerBill.setBillingPeriod(applied.getPeriodCoverage());
+		customerBill.setState(StateValue.SETTLED);	
+		customerBill.setTaxExcludedAmount(applied.getTaxExcludedAmount());
+		customerBill.setTaxIncludedAmount(applied.getTaxIncludedAmount());
 		
 		//check on RelatedParty if is null
 		List<RelatedParty> parties = new ArrayList<RelatedParty>();
