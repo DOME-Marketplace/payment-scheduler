@@ -14,8 +14,10 @@ import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateUpdate;
+import it.eng.dome.tmforum.tmf678.v4.model.AppliedPayment;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
+import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
 
@@ -74,6 +76,21 @@ public class TMForumService implements InitializingBean {
 		customerBill.setState(StateValue.SETTLED);	
 		customerBill.setTaxExcludedAmount(applied.getTaxExcludedAmount());
 		customerBill.setTaxIncludedAmount(applied.getTaxIncludedAmount());
+		
+		// Assumption
+		// When the CustomerBill has been created the bill has been successfully paid (all the amount due)
+		// In the current implementation a CustomerBill is created for each ACBR
+		// The amountDue is set to "0" (i.e., all the amount due has been paid)
+		// The list of the appliedPayment is valorized with an aplliedPayment (the amount of the payment is set to the taxIncluededAmount)
+		Money amountDue=new Money();
+		amountDue.setUnit("EUR");
+		amountDue.setValue(0f);
+		customerBill.setAmountDue(amountDue);
+		List<AppliedPayment> appliedPayments=new ArrayList<AppliedPayment>();
+		AppliedPayment appliedPayment=new AppliedPayment();
+		appliedPayment.setAppliedAmount(applied.getTaxIncludedAmount());
+		appliedPayments.add(appliedPayment);
+		customerBill.setAppliedPayment(appliedPayments);
 		
 		//check on RelatedParty if is null
 		List<RelatedParty> parties = new ArrayList<RelatedParty>();
