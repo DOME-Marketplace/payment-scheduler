@@ -86,6 +86,14 @@ public class StartupListener implements ApplicationListener<ApplicationReadyEven
                         	if (env_value == null) {
                         		env_value = m.group(2) + " (<DEFAULT>)";
                         	}
+                        	
+                        	// truncate credential BASE64
+                        	if (env_key.contains("BASE64")) {
+                        		int SIZE = 30;
+                        		if (env_value != null && env_value.length() > SIZE) {
+                        			env_value = env_value.substring(0, SIZE) + "...";
+                        		}
+                        	}
                         	vars.put(env_key, env_value);
                         }
                     }

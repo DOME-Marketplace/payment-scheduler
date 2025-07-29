@@ -5,6 +5,8 @@
 ### <code>1.2.3</code> :calendar: 29/07/2025
 **Improvements**
 * Added `amountDue` and `appliedPayment` attributes to the CustomerBill.
+* Generate automatic `REST_APIs.md` file from **Swagger APIs** using the `generate-rest-apis` profile.
+
 
 ### <code>1.2.2</code> :calendar: 14/07/2025
 **Improvements**
