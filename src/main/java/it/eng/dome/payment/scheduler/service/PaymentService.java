@@ -184,7 +184,7 @@ public class PaymentService implements InitializingBean {
 			
 			float amount = 0;
 			if (apply.getTaxExcludedAmount().getValue() != null) {
-				amount = apply.getTaxExcludedAmount().getValue().floatValue();
+				amount = apply.getTaxIncludedAmount().getValue().floatValue();
 			}
 			
 			if (productProviderExternalId != null) {
