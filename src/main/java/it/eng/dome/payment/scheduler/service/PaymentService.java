@@ -223,7 +223,9 @@ public class PaymentService implements InitializingBean {
 			EGPaymentResponse egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
 			   
 			if (egpayment != null) {
-				logger.debug("PaymentExternalId: {}", egpayment.getPaymentExternalId());
+				
+				String paymentExternalId=egpayment.getPaymentExternalId();
+				logger.debug("PaymentExternalId: {}", paymentExternalId);
 				
 				List<Payout> payoutList = egpayment.getPayoutList();
 				Map<String, AppliedCustomerBillingRate> applyMap = applied.stream().collect(Collectors.toMap(AppliedCustomerBillingRate::getId, Function.identity()));
@@ -243,7 +245,7 @@ public class PaymentService implements InitializingBean {
 						AppliedCustomerBillingRate appliedCustomerBillingRate = applyMap.get(applyId);
 						
 						logger.info("Handling payment status: {}", statusEnum.name());
-						handlePaymentStatus(statusEnum, appliedCustomerBillingRate);
+						handlePaymentStatus(statusEnum, appliedCustomerBillingRate, paymentExternalId);
 						
 					} else {
 						//TODO - Manage if cannot find the paymentItemExternalId -> Payment state = PROCESSED => how it must update the appliedCustomerBillingRate
@@ -357,10 +359,10 @@ public class PaymentService implements InitializingBean {
 	    PENDING
 	}
 	
-	private void handlePaymentStatus(Status status, AppliedCustomerBillingRate applied) {
+	private void handlePaymentStatus(Status status, AppliedCustomerBillingRate applied, String paymentExternalId) {
 	    switch (status) {
 	        case PROCESSED:
-	            handleStatusProcessed(applied);
+	            handleStatusProcessed(applied, paymentExternalId);
 	            break;
 	        case PENDING:
 	            handleStatusPending(applied);
@@ -371,9 +373,9 @@ public class PaymentService implements InitializingBean {
 	    }
 	}
 
-	private void handleStatusProcessed(AppliedCustomerBillingRate applied) {
+	private void handleStatusProcessed(AppliedCustomerBillingRate applied, String paymentExternalId) {
 				
-		if (tmforumService.updateAppliedCustomerBillingRate(applied)) { // set isBilled = true and add CustomerBill (BillRef)
+		if (tmforumService.updateAppliedCustomerBillingRate(applied, paymentExternalId)) { // set isBilled = true and add CustomerBill (BillRef)
 			logger.info("The appliedCustomerBillingRateId {} with type {} has been updated successfully", applied.getId(), applied.getType());
 		} else {
 			logger.error("Couldn't update appliedCustomerBillingRate {} in TMForum", applied.getId());
