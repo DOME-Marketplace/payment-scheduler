@@ -55,9 +55,10 @@ public class PaymentNotifyController {
 						
 						Status statusEnum = Status.valueOf(paymentStatus.getState().toUpperCase());
 						List<String> appliedIds = paymentStatus.getPaymentItemExternalIds();
+						String paymentExternalId = paymentStatus.getPaymentExternalId();
 						
-						logger.info("Handling {} payment status with {} applied", statusEnum.name(), appliedIds.size());
-						List<String> appliedNotUpdated = handlePaymentStatus(statusEnum, appliedIds);
+						logger.info("Handling {} payment status with {} applied and paymentExternalId='{}'", statusEnum.name(), appliedIds.size(), paymentExternalId);
+						List<String> appliedNotUpdated = handlePaymentStatus(statusEnum, appliedIds, paymentExternalId);
 	
 						if (!appliedNotUpdated.isEmpty()) {
 							String msg = "The following " + appliedIds.size() + " applied cannot be updated: " + String.join(", ", appliedNotUpdated);
@@ -117,10 +118,10 @@ public class PaymentNotifyController {
 	    FAILED
 	}
 	
-	private List<String> handlePaymentStatus(Status status, List<String> applied) {
+	private List<String> handlePaymentStatus(Status status, List<String> applied, String paymentExternalId) {
 	    switch (status) {
 	        case SUCCEEDED:
-	            return handleStatusSucceeded(applied);
+	            return handleStatusSucceeded(applied, paymentExternalId);
 	        case FAILED:
 	            return handleStatusFailed(applied);
 	    }
@@ -128,14 +129,14 @@ public class PaymentNotifyController {
 		return new ArrayList<String>();
 	}
 	
-	private List<String> handleStatusSucceeded(List<String> applied) {
+	private List<String> handleStatusSucceeded(List<String> applied, String paymentExternalId) {
 		
 		// return the appliedIds that cannot be found (not updated)
 		List<String> appliedIdsNotSucceeded = new ArrayList<String>();
 		
 		for (String id : applied) {
 			
-			if (tmforumService.addCustomerBill(id)) { 
+			if (tmforumService.addCustomerBill(id,paymentExternalId)) { 
 				// set isBilled = true and add CustomerBill (BillRef) to applied
 				logger.info("The appliedCustomerBillingRateId {} has been updated successfully", id);
 			} else {

@@ -2,6 +2,10 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>1.2.4</code> :calendar: 03/09/2025
+**Improvements**
+* Added `paymentRef` to the `appliedPayment` attribute of the CustomerBill.
+
 ### <code>1.2.3</code> :calendar: 29/07/2025
 **Improvements**
 * Added `amountDue` and `appliedPayment` attributes to the CustomerBill.

@@ -18,6 +18,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedPayment;
 import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
+import it.eng.dome.tmforum.tmf678.v4.model.PaymentRef;
 import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
 
@@ -43,13 +44,13 @@ public class TMForumService implements InitializingBean {
 	 * @param appliedId
 	 * @return
 	 */
-	public boolean addCustomerBill(String appliedId) {
+	public boolean addCustomerBill(String appliedId, String paymentExternalId) {
 		logger.info("Add the CustomerBill for appliedId: {}", appliedId);
 		
 		AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
 		
 		if (applied != null) {
-			return updateAppliedCustomerBillingRate(applied);
+			return updateAppliedCustomerBillingRate(applied, paymentExternalId);
 		}else {
 			logger.info("Cannot found the applied with id: {} to add the CustomerBill", appliedId);
 			return false;	
@@ -64,7 +65,7 @@ public class TMForumService implements InitializingBean {
 	 * @param applied
 	 * @return
 	 */
-	public boolean updateAppliedCustomerBillingRate(AppliedCustomerBillingRate applied) {
+	public boolean updateAppliedCustomerBillingRate(AppliedCustomerBillingRate applied, String paymentExternalId) {
 		logger.info("Update the AppliedCustomerBillingRate for id: {}", applied.getId());		
 		
 		logger.debug("Creating CustomerBill to set the BillRef in AppliedCustomerBillingRate");
@@ -77,18 +78,28 @@ public class TMForumService implements InitializingBean {
 		customerBill.setTaxExcludedAmount(applied.getTaxExcludedAmount());
 		customerBill.setTaxIncludedAmount(applied.getTaxIncludedAmount());
 		
+		// Set customerBill.amountDue
 		// Assumption
 		// When the CustomerBill has been created the bill has been successfully paid (all the amount due)
 		// In the current implementation a CustomerBill is created for each ACBR
 		// The amountDue is set to "0" (i.e., all the amount due has been paid)
-		// The list of the appliedPayment is valorized with an aplliedPayment (the amount of the payment is set to the taxIncluededAmount)
+		//
 		Money amountDue=new Money();
 		amountDue.setUnit("EUR");
 		amountDue.setValue(0f);
 		customerBill.setAmountDue(amountDue);
+		
+		// Set customerBill.appliedPayment
+		// Assumption
+		// The list of the appliedPayment is valorized with an aplliedPayment
+		// The amount of the payment is set to the taxIncluededAmount
+		// The reference to the payment is set to the paymentExternalId
 		List<AppliedPayment> appliedPayments=new ArrayList<AppliedPayment>();
 		AppliedPayment appliedPayment=new AppliedPayment();
 		appliedPayment.setAppliedAmount(applied.getTaxIncludedAmount());
+		PaymentRef paymentRef=new PaymentRef();
+		paymentRef.setId(paymentExternalId);
+		appliedPayment.setPayment(paymentRef);
 		appliedPayments.add(appliedPayment);
 		customerBill.setAppliedPayment(appliedPayments);
 		
