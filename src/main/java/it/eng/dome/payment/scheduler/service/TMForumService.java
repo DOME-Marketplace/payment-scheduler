@@ -6,13 +6,10 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerBillApis;
-import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateUpdate;
@@ -25,23 +22,19 @@ import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
 
 @Service
-public class TMForumService implements InitializingBean {
+public class TMForumService {
 	
 	private static final Logger logger = LoggerFactory.getLogger(TMForumService.class);
 	
-	@Autowired
-	private TmfApiFactory tmfApiFactory;
+	private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
+	private final CustomerBillApis customerBillApis;
 	
-	private AppliedCustomerBillRateApis appliedApis;
-	private CustomerBillApis customerBillApis;
-	
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		appliedApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-		customerBillApis = new CustomerBillApis(tmfApiFactory.getTMF678CustomerBillApiClient());
+	public TMForumService(AppliedCustomerBillRateApis appliedCustomerBillRateApis, CustomerBillApis customerBillApis) {
+		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
+		this.customerBillApis = customerBillApis;		
 	}
 	
-	
+
 	/**
 	 * This method update the AppliedCustomerBillingRate setting isBilled attribute to true and creating a CustomerBill (BillRef)
 	 * 
@@ -52,7 +45,7 @@ public class TMForumService implements InitializingBean {
 		logger.info("Add the CustomerBill for appliedId: {}", appliedId);
 
 		try {
-			AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
+			AppliedCustomerBillingRate applied = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(appliedId, null);
 			
 			if (applied != null) {
 				return updateAppliedCustomerBillingRate(applied, paymentExternalId);
@@ -117,7 +110,7 @@ public class TMForumService implements InitializingBean {
 		if (applied.getRelatedParty() != null) {
 			logger.warn("Get num of RelatedParty from applied: {}", applied.getRelatedParty().size());
 			try {
-				parties = appliedApis.getAppliedCustomerBillingRate(applied.getId(), null).getRelatedParty();
+				parties = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(applied.getId(), null).getRelatedParty();
 			} catch (ApiException e) {
 				logger.error("Cannot be found the RelatedParty for appliedId: {}", applied.getId());
 				//return false;
@@ -144,7 +137,7 @@ public class TMForumService implements InitializingBean {
 				update.setBill(bill);
 				
 				logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
-				appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
+				appliedCustomerBillRateApis.updateAppliedCustomerBillingRate(applied.getId(), update);
 				return true;
 			} 
 		} catch (ApiException e) {
@@ -166,7 +159,7 @@ public class TMForumService implements InitializingBean {
 		logger.info("Set isBilled = {} for appliedId: {}", billed, appliedId);		
 		
 		try {
-			AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
+			AppliedCustomerBillingRate applied = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(appliedId, null);
 	
 			if (applied != null) {
 				return setIsBilled(applied, billed);
@@ -204,7 +197,7 @@ public class TMForumService implements InitializingBean {
 		logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
 
 		try {
-			appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
+			appliedCustomerBillRateApis.updateAppliedCustomerBillingRate(applied.getId(), update);
 			return true;
 		} catch (ApiException e) {
 			logger.error("Error: {}", e.getMessage());

@@ -5,13 +5,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -24,7 +23,6 @@ import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse.Payout;
-import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.CustomerType;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
@@ -38,13 +36,13 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 
 @Component(value = "paymentService")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class PaymentService implements InitializingBean {
+public class PaymentService {
 
 	private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
 	private final static String CONCAT_KEY = "|";
 	
-	@Autowired
-	private TmfApiFactory tmfApiFactory;
+	private final ProductInventoryApis productInventoryApis;
+	private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 	
 	@Autowired
 	private StartPayment payment;
@@ -54,16 +52,13 @@ public class PaymentService implements InitializingBean {
 	
 	@Autowired
 	private TMForumService tmforumService;
-
-
-	private AppliedCustomerBillRateApis appliedApis;
-	private ProductInventoryApis productApis;
 	
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		appliedApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-		productApis = new ProductInventoryApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
+	
+	public PaymentService(ProductInventoryApis productInventoryApis, AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+		this.productInventoryApis = productInventoryApis;
+		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
 	}
+
 	
 	/**
 	 * Main method called by PaymentScheduler service (in the PaymentTask class)
@@ -80,7 +75,7 @@ public class PaymentService implements InitializingBean {
 		
 		//TODO to improve - just fixing the error!!!!
 		List<AppliedCustomerBillingRate> appliedList = FetchUtils.streamAll(
-			appliedApis::listAppliedCustomerBillingRates,   // method reference
+			appliedCustomerBillRateApis::listAppliedCustomerBillingRates,   // method reference
 	        null,                                     		// fields
 	        filter,               							// filter
 	        100                                       		// pageSize
@@ -291,7 +286,7 @@ public class PaymentService implements InitializingBean {
 		if (productId != null) {
 
 			try {
-				Product product = productApis.getProduct(productId, null);
+				Product product = productInventoryApis.getProduct(productId, null);
 				if (product != null) {
 					List<Characteristic> prodChars = product.getProductCharacteristic();
 
@@ -329,7 +324,7 @@ public class PaymentService implements InitializingBean {
 		if (productId != null) {
 			
 			try {
-				Product product = productApis.getProduct(productId, null);			
+				Product product = productInventoryApis.getProduct(productId, null);			
 				if (product != null) {
 					List<RelatedParty> parties = product.getRelatedParty();
 					for (RelatedParty party : parties) {
@@ -356,7 +351,7 @@ public class PaymentService implements InitializingBean {
 		
 		if (productId != null) {
 			try {
-				Product product = productApis.getProduct(productId, null);
+				Product product = productInventoryApis.getProduct(productId, null);
 				if (product != null) {
 					List<RelatedParty> parties = product.getRelatedParty();
 					for (RelatedParty party : parties) {

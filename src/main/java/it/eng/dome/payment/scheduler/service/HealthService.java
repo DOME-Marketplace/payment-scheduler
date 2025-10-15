@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,29 +17,24 @@ import it.eng.dome.brokerage.observability.health.Health;
 import it.eng.dome.brokerage.observability.health.HealthStatus;
 import it.eng.dome.brokerage.observability.info.Info;
 import it.eng.dome.payment.scheduler.task.PaymentTask;
-import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 
 @Service
-public class HealthService extends AbstractHealthService implements InitializingBean {
+public class HealthService extends AbstractHealthService {
 
 	private final Logger logger = LoggerFactory.getLogger(HealthService.class);
 	private final static String SERVICE_NAME = "Payment Scheduler";
-
-	@Autowired
-	private TmfApiFactory tmfApiFactory;
-
+	
+	private final ProductInventoryApis productInventoryApis;
+	private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
+	
 	@Autowired
 	private PaymentTask paymentTask;
 
-	private AppliedCustomerBillRateApis appliedApis;
-	private ProductInventoryApis productApis;
-
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		logger.info("Initializing of HealthService");
-		appliedApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-		productApis = new ProductInventoryApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
+	public HealthService(ProductInventoryApis productInventoryApis, AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+		this.productInventoryApis = productInventoryApis;
+		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
 	}
+
 
 	@Override
 	public Info getInfo() {
@@ -131,7 +125,7 @@ public class HealthService extends AbstractHealthService implements Initializing
 
 		try {
 			FetchUtils.streamAll(
-			    productApis::listProducts,
+				productInventoryApis::listProducts,
 			    null,
 			    null,
 			    1
@@ -152,7 +146,7 @@ public class HealthService extends AbstractHealthService implements Initializing
 
 		try {
 			FetchUtils.streamAll(
-					appliedApis::listAppliedCustomerBillingRates,
+				appliedCustomerBillRateApis::listAppliedCustomerBillingRates,
 			    null,
 			    null,
 			    1
