@@ -1,7 +1,6 @@
 package it.eng.dome.payment.scheduler.task;
 
 import java.time.OffsetDateTime;
-import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,8 +27,10 @@ public class PaymentTask {
 
 	@Scheduled(cron = "${scheduling.cron}")
 	public void paymentCycleTask() {
+		
+		OffsetDateTime now = OffsetDateTime.now();
 
-		logger.info("Scheduling the payment cycle process at {}", PaymentDateUtils.dateformat.format(new Date()));
+		logger.info("Scheduling the payment cycle process at {}", now.format(PaymentDateUtils.formatter));
 
 		try {
 			paymentService.payments();
@@ -42,7 +43,7 @@ public class PaymentTask {
 			logger.error("Error during scheduled payment cycle", e);
 		
 		} finally {
-			lastExecutionTime = OffsetDateTime.now();
+			lastExecutionTime = now;
 		}
 	}
 	
