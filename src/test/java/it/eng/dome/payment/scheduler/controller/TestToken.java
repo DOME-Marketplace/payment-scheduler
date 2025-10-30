@@ -1,6 +1,6 @@
 package it.eng.dome.payment.scheduler.controller;
 
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import it.eng.dome.payment.scheduler.loader.LearCredentialMachineLoader;
 import it.eng.dome.payment.scheduler.loader.PrivateKeyLoader;
@@ -22,8 +22,8 @@ public class TestToken {
 		String client_assertion =  m2m.getAssertion(learCredentialMachineLoader.getLearCredentialMachine()).get("client_assertion");
 		System.out.println("Get client_assertion: " + client_assertion);
 		
-		RestTemplate restTemplate = new RestTemplate();
-		VCVerifier verifier = new VCVerifier(restTemplate, learCredentialMachineLoader);
+		RestClient restClient = RestClient.create();
+		VCVerifier verifier = new VCVerifier(restClient, learCredentialMachineLoader);
 		
 		//usage of reflection to set attributes in VCVerifier
 		org.springframework.test.util.ReflectionTestUtils.setField(verifier, "endpoint", "https://verifier.dome-marketplace-sbx.org/oidc/token");

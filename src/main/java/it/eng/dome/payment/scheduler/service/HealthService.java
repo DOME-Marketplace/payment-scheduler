@@ -6,7 +6,13 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClient;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.ProductInventoryApis;
@@ -16,6 +22,7 @@ import it.eng.dome.brokerage.observability.health.Check;
 import it.eng.dome.brokerage.observability.health.Health;
 import it.eng.dome.brokerage.observability.health.HealthStatus;
 import it.eng.dome.brokerage.observability.info.Info;
+import it.eng.dome.payment.scheduler.model.JwtResponse;
 import it.eng.dome.payment.scheduler.task.PaymentTask;
 
 @Service
@@ -29,7 +36,20 @@ public class HealthService extends AbstractHealthService {
 	
 	@Autowired
 	private PaymentTask paymentTask;
+	
+	@Autowired
+	private RestClient restClient;
+	
+	@Autowired
+	private VCVerifier vcVerifier;
 
+	
+	@Value("${payment.payment_base_url}")
+	public String paymentBaseUrl;
+
+	@Value("${payment.payment_start_non_interactive}")
+	public String paymentStartNonInteractive;
+	
 	public HealthService(ProductInventoryApis productInventoryApis, AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
 		this.productInventoryApis = productInventoryApis;
 		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
@@ -71,7 +91,7 @@ public class HealthService extends AbstractHealthService {
 	    	health.elevateStatus(c.getStatus());
         }
 	    
-	    // 4: check payment gateway API
+	    // 4: check token + payment gateway APIs
 	    for(Check c: getPaymentSchedulerCheck()) {
 	    	health.addCheck(c);
 	    	health.elevateStatus(c.getStatus());
@@ -171,14 +191,53 @@ public class HealthService extends AbstractHealthService {
 
         List<Check> out = new ArrayList<>();
 
-        Check payment = createCheck("payment-gateway", "connectivity", "EG");
-
+        Check tokenCheck = createCheck("verifier-token", "connectivity", "token");
+        String token = null;
         try {
-            //TODO add API Payment Gateway
-            payment.setStatus(HealthStatus.PASS);
+        	token = vcVerifier.getVCVerifierToken();
+        	if (token != null) {
+        		tokenCheck.setStatus(HealthStatus.PASS);
+        	} else {
+        		tokenCheck.setStatus(HealthStatus.FAIL);
+        		tokenCheck.setOutput("Token cannot be retrieved");
+        	}
+        		
         }
         catch(Exception e) {
-			logger.error("Error:: {}", e.getMessage());
+			logger.error("Error: {}", e.getMessage());
+			tokenCheck.setStatus(HealthStatus.FAIL);
+			tokenCheck.setOutput(e.toString());
+        }
+        out.add(tokenCheck);
+        
+        Check payment = createCheck("payment-gateway", "connectivity", "EG");
+        
+        try {
+            //Simulation of API Payment Gateway
+        	String url = paymentBaseUrl + paymentStartNonInteractive;
+        	
+        	HttpHeaders headers = new HttpHeaders();
+    		headers.setContentType(MediaType.APPLICATION_JSON);
+    		headers.set("Authorization", "Bearer " + token);
+        	HttpEntity<String> request = new HttpEntity<>("{}", headers);
+        	JwtResponse response = restClient.post()
+				    .uri(url)
+				    .body(request)
+				    .retrieve()
+				    .body(JwtResponse.class);
+        	
+        	if (response != null) {
+        		payment.setStatus(HealthStatus.PASS);
+        	} else {
+        		payment.setStatus(HealthStatus.FAIL);
+        		payment.setOutput("Server not available");
+        	}
+        		
+		} catch (HttpClientErrorException.Forbidden e) {
+			// simulation Forbidden error 
+			payment.setStatus(HealthStatus.PASS);
+		} catch(Exception e) {
+			logger.error("Error: {}", e.getMessage());
 			payment.setStatus(HealthStatus.FAIL);
 			payment.setOutput(e.toString());
         }

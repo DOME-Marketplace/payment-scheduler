@@ -1,6 +1,6 @@
 # Payment Scheduler
 
-**Version:** 1.2.3  
+**Version:** 1.2.5  
 **Description:** Swagger REST APIs for the payment-scheduler software  
 
 
@@ -17,8 +17,9 @@
 |------|------|------|
 | POST | `/payment/notify` | notifyPayment |
 
-### info-payment-controller
+### Payment Scheduler Controller
 | Verb | Path | Task |
 |------|------|------|
 | GET | `/payment/info` | getInfo |
+| GET | `/payment/health` | getHealth |
 
