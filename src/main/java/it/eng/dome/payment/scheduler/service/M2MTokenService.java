@@ -1,6 +1,7 @@
 package it.eng.dome.payment.scheduler.service;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
@@ -94,7 +95,7 @@ public class M2MTokenService {
 			//logger.info("Get VPTokenJWT : {}", vpTokenJWTString);
 			
 			//ADD: encode vp_token
-			String vp_token = Base64.getEncoder().encodeToString(vpTokenJWTString.getBytes());
+			String vp_token = Base64.getEncoder().encodeToString(vpTokenJWTString.getBytes(StandardCharsets.UTF_8));
 			//logger.info("Encode vp_token : {}", vpTokenJWTString);
 			logger.debug("External domain: {}", externalDomain);
 			
@@ -229,7 +230,7 @@ public class M2MTokenService {
 	
 	private String getVCinJWTDecodedFromBase64(String vcTokenBase64) {        
         byte[] vcTokenDecoded = Base64.getDecoder().decode(vcTokenBase64);
-        return new String(vcTokenDecoded).replaceAll("\\r|\\n", "");
+        return new String(vcTokenDecoded, StandardCharsets.UTF_8).replaceAll("\\r|\\n", "");
     }
 
 	private String bytesToHex(byte[] bytes) {

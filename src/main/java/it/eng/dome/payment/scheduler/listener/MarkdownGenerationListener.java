@@ -1,6 +1,7 @@
 package it.eng.dome.payment.scheduler.listener;
 
 import java.io.FileWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -112,7 +113,7 @@ public class MarkdownGenerationListener {
 			}
 
 			// Write FILE.MD
-			try (FileWriter writer = new FileWriter(outputPath)) {
+			try (FileWriter writer = new FileWriter(outputPath, StandardCharsets.UTF_8)) {
 				writer.write(md.toString());
 			}
 
