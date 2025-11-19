@@ -86,12 +86,16 @@ public class HealthService extends AbstractHealthService {
 	    }
 	    
 	    // 3: check self info
-	    for(Check c: getChecksOnSelf()) {
-	    	health.addCheck(c);
-	    	health.elevateStatus(c.getStatus());
-        }
+	    Check checkSelfInfo = getChecksOnSelf(SERVICE_NAME);
+	    health.addCheck(checkSelfInfo);
+    	health.elevateStatus(checkSelfInfo.getStatus());
+    	
+    	// 4: check payment scheduler status
+    	Check checkScheduler = getChecksScheduler();
+    	health.addCheck(checkScheduler);
+    	health.elevateStatus(checkScheduler.getStatus());
 	    
-	    // 4: check token + payment gateway APIs
+	    // 5: check token + payment gateway APIs
 	    for(Check c: getPaymentSchedulerCheck()) {
 	    	health.addCheck(c);
 	    	health.elevateStatus(c.getStatus());
@@ -106,10 +110,9 @@ public class HealthService extends AbstractHealthService {
 	}
 	
 	
-	private List<Check> getChecksOnSelf() {
-	    List<Check> out = new ArrayList<>();
+	private Check getChecksScheduler() {
 
-	    // 1️ - Check scheduler
+	    // Check scheduler
 	    HealthStatus schedulerStatus = paymentTask.isHealthy() ? HealthStatus.PASS : HealthStatus.FAIL;
 	    
 	    String schedulerOutput = paymentTask.isHealthy()
@@ -117,19 +120,7 @@ public class HealthService extends AbstractHealthService {
 	            : "Last run failed at " + paymentTask.getLastExecutionTime() +
 	              (paymentTask.getLastErrorMessage() != null ? " | Error: " + paymentTask.getLastErrorMessage() : "");
 	    
-	    Check schedulerCheck = createCheck("self", "scheduler", "payment-task", schedulerStatus, schedulerOutput);
-	    out.add(schedulerCheck);
-
-	    // 2️ - Check getInfo API
-	    Info info = getInfo();
-	    HealthStatus infoStatus = (info != null) ? HealthStatus.PASS : HealthStatus.FAIL;
-	    String infoOutput = (info != null)
-	            ? SERVICE_NAME + " version: " + info.getVersion()
-	            : SERVICE_NAME + " getInfo returned unexpected response";
-	    Check infoCheck = createCheck("self", "get-info", "api", infoStatus, infoOutput);
-	    out.add(infoCheck);
-
-	    return out;
+	    return createCheck("self", "scheduler", "payment-task", schedulerStatus, schedulerOutput);
 	}
 
 
