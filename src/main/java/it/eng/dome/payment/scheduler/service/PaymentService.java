@@ -5,29 +5,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
-import it.eng.dome.brokerage.api.ProductApis;
+import it.eng.dome.brokerage.api.ProductInventoryApis;
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse.Payout;
-import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
 import it.eng.dome.payment.scheduler.util.CustomerType;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
 import it.eng.dome.payment.scheduler.util.ProviderType;
+import it.eng.dome.tmforum.tmf637.v4.ApiException;
 import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
 import it.eng.dome.tmforum.tmf637.v4.model.Product;
 import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
@@ -36,13 +36,13 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 
 @Component(value = "paymentService")
 @Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class PaymentService implements InitializingBean {
+public class PaymentService {
 
 	private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
 	private final static String CONCAT_KEY = "|";
 	
-	@Autowired
-	private TmfApiFactory tmfApiFactory;
+	private final ProductInventoryApis productInventoryApis;
+	private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 	
 	@Autowired
 	private StartPayment payment;
@@ -52,16 +52,13 @@ public class PaymentService implements InitializingBean {
 	
 	@Autowired
 	private TMForumService tmforumService;
-
-
-	private AppliedCustomerBillRateApis appliedApis;
-	private ProductApis productApis;
 	
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		appliedApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
-		productApis = new ProductApis(tmfApiFactory.getTMF637ProductInventoryApiClient());
+	
+	public PaymentService(ProductInventoryApis productInventoryApis, AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+		this.productInventoryApis = productInventoryApis;
+		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
 	}
+
 	
 	/**
 	 * Main method called by PaymentScheduler service (in the PaymentTask class)
@@ -74,7 +71,16 @@ public class PaymentService implements InitializingBean {
 		filter.put("isBilled", "false"); // isBilled = false
 		//filter.put("rateType", "recurring"); // type = recurring		
 
-		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null, filter);		
+//		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null, filter);
+		
+		//TODO to improve - just fixing the error!!!!
+		List<AppliedCustomerBillingRate> appliedList = FetchUtils.streamAll(
+			appliedCustomerBillRateApis::listAppliedCustomerBillingRates,   // method reference
+	        null,                                     		// fields
+	        filter,               							// filter
+	        100                                       		// pageSize
+		).toList(); 
+		
 		return payments(appliedList);
 	}
 	
@@ -279,25 +285,31 @@ public class PaymentService implements InitializingBean {
 
 		if (productId != null) {
 
-			Product product = productApis.getProduct(productId, null);
-			if (product != null) {
-				List<Characteristic> prodChars = product.getProductCharacteristic();
+			try {
+				Product product = productInventoryApis.getProduct(productId, null);
+				if (product != null) {
+					List<Characteristic> prodChars = product.getProductCharacteristic();
 
-				if (prodChars != null && !prodChars.isEmpty()) {
-					for (Characteristic c : prodChars) {
-						if (c.getName().trim().startsWith(PAYMENT_PRE_AUTHORIZATION)) {		
-							logger.info("Found the attribute {} in the ProductCharacteristic", c.getName());
-							if (c.getValue() != null) {								
-								logger.info("Found the {} value: {}", c.getName(), c.getValue().toString());
-								return c.getValue().toString();
-							} else {
-								logger.error("The {} is null from product {}", c.getName(), productId);
-								return null;
+					if (prodChars != null && !prodChars.isEmpty()) {
+						for (Characteristic c : prodChars) {
+							if (c.getName().trim().startsWith(PAYMENT_PRE_AUTHORIZATION)) {		
+								logger.info("Found the attribute {} in the ProductCharacteristic", c.getName());
+								if (c.getValue() != null) {								
+									logger.info("Found the {} value: {}", c.getName(), c.getValue().toString());
+									return c.getValue().toString();
+								} else {
+									logger.error("The {} is null from product {}", c.getName(), productId);
+									return null;
+								}
 							}
 						}
-					}
-				}				
-			}				
+					}				
+				}	
+			} catch (ApiException e) {
+				logger.error("Error: {}", e.getMessage());
+				return null;
+			}
+						
 		}
 
 		logger.error("Couldn't retrieve the paymentPreAuthorizationExternalId from product {}", productId);
@@ -310,18 +322,22 @@ public class PaymentService implements InitializingBean {
 	private String getProductProviderExternalId(String productId) {
 
 		if (productId != null) {
-
-			Product product = productApis.getProduct(productId, null);
-			if (product != null) {
-				List<RelatedParty> parties = product.getRelatedParty();
-				for (RelatedParty party : parties) {
-					if (ProviderType.isValid(party.getRole())) {
-						logger.debug("Retrieved productProviderExternalId: {}", party.getId());
-						return party.getId(); 
+			
+			try {
+				Product product = productInventoryApis.getProduct(productId, null);			
+				if (product != null) {
+					List<RelatedParty> parties = product.getRelatedParty();
+					for (RelatedParty party : parties) {
+						if (ProviderType.isValid(party.getRole())) {
+							logger.debug("Retrieved productProviderExternalId: {}", party.getId());
+							return party.getId(); 
+						}
 					}
 				}
+			} catch (ApiException e) {
+				logger.error("Error: {}", e.getMessage());
+				return null;
 			}
-
 		}
 		
 		logger.error("Couldn't retrieve the productProviderExternalId from product {}", productId);
@@ -334,18 +350,21 @@ public class PaymentService implements InitializingBean {
 	private String getCustomerOrganizationId(String productId) {
 		
 		if (productId != null) {
-
-			Product product = productApis.getProduct(productId, null);
-			if (product != null) {
-				List<RelatedParty> parties = product.getRelatedParty();
-				for (RelatedParty party : parties) {
-					if (CustomerType.isValid(party.getRole())) {
-						logger.debug("Retrieved customerOrganizationId: {}", party.getId());
-						return party.getId(); 
+			try {
+				Product product = productInventoryApis.getProduct(productId, null);
+				if (product != null) {
+					List<RelatedParty> parties = product.getRelatedParty();
+					for (RelatedParty party : parties) {
+						if (CustomerType.isValid(party.getRole())) {
+							logger.debug("Retrieved customerOrganizationId: {}", party.getId());
+							return party.getId(); 
+						}
 					}
 				}
+			} catch (ApiException e) {
+				logger.error("Error: {}", e.getMessage());
+				return null;
 			}
-
 		}
 		
 		logger.error("Couldn't retrieve the customerOrganizationId from product {}", productId);

@@ -6,12 +6,11 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
-import it.eng.dome.payment.scheduler.tmf.TmfApiFactory;
+import it.eng.dome.brokerage.api.CustomerBillApis;
+import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateUpdate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedPayment;
@@ -23,21 +22,19 @@ import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
 
 @Service
-public class TMForumService implements InitializingBean {
+public class TMForumService {
 	
 	private static final Logger logger = LoggerFactory.getLogger(TMForumService.class);
 	
-	@Autowired
-	private TmfApiFactory tmfApiFactory;
+	private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
+	private final CustomerBillApis customerBillApis;
 	
-	private AppliedCustomerBillRateApis appliedApis;
-	
-	@Override
-	public void afterPropertiesSet() throws Exception {
-		appliedApis = new AppliedCustomerBillRateApis(tmfApiFactory.getTMF678CustomerBillApiClient());
+	public TMForumService(AppliedCustomerBillRateApis appliedCustomerBillRateApis, CustomerBillApis customerBillApis) {
+		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
+		this.customerBillApis = customerBillApis;		
 	}
 	
-	
+
 	/**
 	 * This method update the AppliedCustomerBillingRate setting isBilled attribute to true and creating a CustomerBill (BillRef)
 	 * 
@@ -46,16 +43,21 @@ public class TMForumService implements InitializingBean {
 	 */
 	public boolean addCustomerBill(String appliedId, String paymentExternalId) {
 		logger.info("Add the CustomerBill for appliedId: {}", appliedId);
-		
-		AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
-		
-		if (applied != null) {
-			return updateAppliedCustomerBillingRate(applied, paymentExternalId);
-		}else {
-			logger.info("Cannot found the applied with id: {} to add the CustomerBill", appliedId);
-			return false;	
+
+		try {
+			AppliedCustomerBillingRate applied = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(appliedId, null);
+			
+			if (applied != null) {
+				return updateAppliedCustomerBillingRate(applied, paymentExternalId);
+			}else {
+				logger.info("Cannot found the applied with id: {} to add the CustomerBill", appliedId);
+				return false;	
+			}
+
+		} catch (ApiException e) {
+			logger.error("Error: {}", e.getMessage());
+			return false;
 		}
-		
 	}
 	
 	
@@ -107,34 +109,42 @@ public class TMForumService implements InitializingBean {
 		List<RelatedParty> parties = new ArrayList<RelatedParty>();
 		if (applied.getRelatedParty() != null) {
 			logger.warn("Get num of RelatedParty from applied: {}", applied.getRelatedParty().size());
-			parties = appliedApis.getAppliedCustomerBillingRate(applied.getId(), null).getRelatedParty();
+			try {
+				parties = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(applied.getId(), null).getRelatedParty();
+			} catch (ApiException e) {
+				logger.error("Cannot be found the RelatedParty for appliedId: {}", applied.getId());
+				//return false;
+			}
 		}
 		
 		//FIXME - applied list cannot provide all parties, but just one!!!
 		customerBill.setRelatedParty(/*applied.getRelatedParty()*/parties);
-		
-		String idCustomerBill = appliedApis.createCustomerBill(customerBill);
-		if (idCustomerBill != null) {
-			// Creating the BillRef		
-			BillRef bill = new BillRef();
-			bill.setId(idCustomerBill);
-			bill.setHref(idCustomerBill);
-			logger.info("Set id {} in the BillRef", bill.getId());
-			
-			// create AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate
-			logger.debug("Creating an AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate with id: {}", applied.getId());	
-			AppliedCustomerBillingRateUpdate update = new AppliedCustomerBillingRateUpdate();
-			update.setIsBilled(true);
-			update.setBill(bill);
-			
-			logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
 
-			return appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
-			
-		} else {
-			logger.error("Cannot be create the CustomerBill");
+		try {
+			String idCustomerBill = customerBillApis.createCustomerBill(customerBill);
+		
+			if (idCustomerBill != null) {
+				// Creating the BillRef		
+				BillRef bill = new BillRef();
+				bill.setId(idCustomerBill);
+				bill.setHref(idCustomerBill);
+				logger.info("Set id {} in the BillRef", bill.getId());
+				
+				// create AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate
+				logger.debug("Creating an AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate with id: {}", applied.getId());	
+				AppliedCustomerBillingRateUpdate update = new AppliedCustomerBillingRateUpdate();
+				update.setIsBilled(true);
+				update.setBill(bill);
+				
+				logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
+				appliedCustomerBillRateApis.updateAppliedCustomerBillingRate(applied.getId(), update);
+				return true;
+			} 
+		} catch (ApiException e) {
+			logger.error("CustomerBill cannot be create");
 			return false;
 		}
+		return false;
 	}
 	
 	/**
@@ -147,13 +157,19 @@ public class TMForumService implements InitializingBean {
 	public boolean setIsBilled(String appliedId, boolean billed) {
 
 		logger.info("Set isBilled = {} for appliedId: {}", billed, appliedId);		
-		AppliedCustomerBillingRate applied = appliedApis.getAppliedCustomerBillingRate(appliedId, null);
 		
-		if (applied != null) {
-			return setIsBilled(applied, billed);
-		}else {
-			logger.info("Cannot found the applied with id: {} to set isBilled attribute", appliedId);
-			return false;	
+		try {
+			AppliedCustomerBillingRate applied = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(appliedId, null);
+	
+			if (applied != null) {
+				return setIsBilled(applied, billed);
+			}else {
+				logger.info("Cannot found the applied with id: {} to set isBilled attribute", appliedId);
+				return false;	
+			}
+		} catch (ApiException e) {
+			logger.error("Error: {}", e.getMessage());
+			return false;
 		}
 	}
 	
@@ -180,7 +196,13 @@ public class TMForumService implements InitializingBean {
 				
 		logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
 
-		return appliedApis.updateAppliedCustomerBillingRate(applied.getId(), update);
+		try {
+			appliedCustomerBillRateApis.updateAppliedCustomerBillingRate(applied.getId(), update);
+			return true;
+		} catch (ApiException e) {
+			logger.error("Error: {}", e.getMessage());
+			return false;
+		}
 	}
 
 }

@@ -6,15 +6,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 
 import it.eng.dome.payment.scheduler.loader.LearCredentialMachineLoader;
 import it.eng.dome.payment.scheduler.model.TokenResponse;
@@ -24,18 +22,18 @@ import it.eng.dome.payment.scheduler.util.M2MTokenUtils;
 public class VCVerifier {
 
 	private static final Logger logger = LoggerFactory.getLogger(VCVerifier.class);
-	private final RestTemplate restTemplate;
 	private LearCredentialMachineLoader learCredentialMachine;
+	
+	private RestClient restClient;
 
 	@Value("${vc_verifier.endpoint}")
 	public String endpoint;
 	
 	@Autowired
 	private M2MTokenService m2mTokenService;
-
 	
-	public VCVerifier(RestTemplate restTemplate, LearCredentialMachineLoader learCredentialMachine) {
-		this.restTemplate = restTemplate;
+	public VCVerifier(RestClient restClient, LearCredentialMachineLoader learCredentialMachine) {
+		this.restClient = restClient;
 		this.learCredentialMachine = learCredentialMachine;
 	}
 	
@@ -67,9 +65,14 @@ public class VCVerifier {
 	        body.add("client_assertion_type", client_assertion_type);
 	        body.add("client_assertion", client_assertion);
 
-	        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
-			ResponseEntity<TokenResponse> response = restTemplate.exchange(endpoint, HttpMethod.POST, request, TokenResponse.class);
-			
+	        ResponseEntity<TokenResponse> response = restClient.post()
+			        .uri(endpoint)
+			        .accept(MediaType.APPLICATION_JSON)
+			        .headers(h -> h.addAll(headers))
+			        .body(body)
+			        .retrieve()
+			        .toEntity(TokenResponse.class);
+	        
 			if (response.getBody() != null) {
 				String accessToken = response.getBody().getAccess_token();
 				if (accessToken != null) {

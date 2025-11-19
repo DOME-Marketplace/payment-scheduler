@@ -2,9 +2,21 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>1.2.5</code> :calendar: 30/10/2025
+**Improvements**
+* Usage of the new `Brokerage Utils` version: `2.2.0`.
+* Usage of `AbstractHealthService` class from `Brokerage Utils` to manage **getInfo()** and **getHealth()** features.
+* Add `TmfApiConfig` class to avoid loading the **TMFourm APIs** objects every time they are used in service classes.
+* Add `TrailingSlashFilter` filter to remove trailing slash from request path.
+* Add **JacksonModuleConfig** to *serialize* and *deserialize* the **TMForum enum types**.
+
+**BugFixing**
+* Replace **RestTemplate** for **RestClient**.
+
 ### <code>1.2.4</code> :calendar: 03/09/2025
 **Improvements**
 * Added `paymentRef` to the `appliedPayment` attribute of the CustomerBill.
+
 
 ### <code>1.2.3</code> :calendar: 29/07/2025
 **Improvements**

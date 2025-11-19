@@ -8,12 +8,13 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
-
+import org.springframework.web.client.RestClient;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -25,7 +26,8 @@ public class MarkdownGenerationListener {
 	private final String API_DOCS_PATH = "/v3/api-docs";
 	private final String REST_API_MD = "REST_APIs.md";
 
-	private final RestTemplate restTemplate;
+	@Autowired
+	private RestClient restClient;
 
 	@Value("${rest_api_docs.generate_md:false}")
 	private boolean generateApiDocs;
@@ -36,9 +38,6 @@ public class MarkdownGenerationListener {
 	@Value("${server.servlet.context-path}")
 	private String contextPath;
 
-	public MarkdownGenerationListener(RestTemplate restTemplate) {
-		this.restTemplate = restTemplate;
-	}
 
 	@EventListener(ApplicationReadyEvent.class)
 	public void generateReadmeAfterStartup() {
@@ -50,7 +49,12 @@ public class MarkdownGenerationListener {
 			String url = "http://localhost:" + serverPort + path.replaceAll("//+", "/");
 
 			logger.info("GET OpenAPI call to {}", url);
-			String json = restTemplate.getForObject(url, String.class);
+			
+			String json = restClient.get()
+			        .uri(url)
+			        .accept(MediaType.APPLICATION_JSON)
+			        .retrieve()
+			        .body(String.class);
 			
 			generateMarkdownFromJson(json, REST_API_MD);
 			
