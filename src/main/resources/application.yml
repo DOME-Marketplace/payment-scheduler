@@ -5,13 +5,6 @@ server:
   servlet:
     context-path: ${BILLING_PREFIX:/}
 
-application:
-  name: "@project.artifactId@"
-
-build: 
-  version: "@project.version@"
-  timestamp: "@timestamp@"
-
 # Scheduling Task Configuration  
 scheduling:
   cron: ${SCHEDULING_CRON_JOB_TASK:0 30 */3 * * ?} 
@@ -71,3 +64,9 @@ tmforumapi:
     
   tmf678_billing_path: tmf-api/customerBillManagement/v4
   tmf637_inventory_path: tmf-api/productInventory/v4
+
+# in progress
+dome:
+  tmf:
+    schema:
+      applied: ${DOME_TMF_SCHEMA_APPLIED:https://raw.githubusercontent.com/DOME-Marketplace/tmf-api/refs/heads/main/DOME/TrackedShareableEntity.schema.json}

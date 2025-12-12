@@ -86,7 +86,7 @@ public class HealthService extends AbstractHealthService {
 	    }
 	    
 	    // 3: check self info
-	    for(Check c: getChecksOnSelf()) {
+	    for(Check c: getChecksOwnServices()) {
 	    	health.addCheck(c);
 	    	health.elevateStatus(c.getStatus());
         }
@@ -106,10 +106,10 @@ public class HealthService extends AbstractHealthService {
 	}
 	
 	
-	private List<Check> getChecksOnSelf() {
+	private List<Check> getChecksOwnServices() {
 	    List<Check> out = new ArrayList<>();
 
-	    // 1️ - Check scheduler
+	    // 1️ - check scheduler
 	    HealthStatus schedulerStatus = paymentTask.isHealthy() ? HealthStatus.PASS : HealthStatus.FAIL;
 	    
 	    String schedulerOutput = paymentTask.isHealthy()
@@ -120,14 +120,9 @@ public class HealthService extends AbstractHealthService {
 	    Check schedulerCheck = createCheck("self", "scheduler", "payment-task", schedulerStatus, schedulerOutput);
 	    out.add(schedulerCheck);
 
-	    // 2️ - Check getInfo API
-	    Info info = getInfo();
-	    HealthStatus infoStatus = (info != null) ? HealthStatus.PASS : HealthStatus.FAIL;
-	    String infoOutput = (info != null)
-	            ? SERVICE_NAME + " version: " + info.getVersion()
-	            : SERVICE_NAME + " getInfo returned unexpected response";
-	    Check infoCheck = createCheck("self", "get-info", "api", infoStatus, infoOutput);
-	    out.add(infoCheck);
+	    // 2️ - check self info
+		Check selfInfo = getChecksOnSelf(SERVICE_NAME);
+		out.add(selfInfo);
 
 	    return out;
 	}
