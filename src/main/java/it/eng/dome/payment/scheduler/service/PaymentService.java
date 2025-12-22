@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -17,21 +16,18 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
+import it.eng.dome.brokerage.api.CustomerBillApis;
 import it.eng.dome.brokerage.api.ProductInventoryApis;
 import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse.Payout;
-import it.eng.dome.payment.scheduler.util.CustomerType;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
-import it.eng.dome.payment.scheduler.util.ProviderType;
-import it.eng.dome.tmforum.tmf637.v4.ApiException;
-import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
-import it.eng.dome.tmforum.tmf637.v4.model.Product;
-import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
+import jakarta.validation.constraints.NotNull;
 
 
 @Component(value = "paymentService")
@@ -39,10 +35,7 @@ import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
 public class PaymentService {
 
 	private final Logger logger = LoggerFactory.getLogger(PaymentService.class);
-	private final static String CONCAT_KEY = "|";
-	
-	private final ProductInventoryApis productInventoryApis;
-	private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
+	private final CustomerBillApis customerBillApis;
 	
 	@Autowired
 	private StartPayment payment;
@@ -54,9 +47,8 @@ public class PaymentService {
 	private TMForumService tmforumService;
 	
 	
-	public PaymentService(ProductInventoryApis productInventoryApis, AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
-		this.productInventoryApis = productInventoryApis;
-		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
+	public PaymentService(ProductInventoryApis productInventoryApis, CustomerBillApis customerBillApis, AppliedCustomerBillRateApis appliedCustomerBillRateApis) {
+		this.customerBillApis = customerBillApis;
 	}
 
 	
@@ -66,151 +58,140 @@ public class PaymentService {
 	public String payments() {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
-		// add filter for AppliedCustomerBillingRate 
+		// add filter for CustomerBill(s) 
 		Map<String, String> filter = new HashMap<String, String>();
-		filter.put("isBilled", "false"); // isBilled = false
-		//filter.put("rateType", "recurring"); // type = recurring		
+		//filter.put("state", StateValue.NEW.getValue()); // state = new
+		filter.put("state", StateValue.NEW.getValue() + "," + StateValue.PARTIALLY_PAID.getValue());
 
-//		List<AppliedCustomerBillingRate> appliedList = appliedApis.getAllAppliedCustomerBillingRates(null, filter);
-		
-		//TODO to improve - just fixing the error!!!!
-		List<AppliedCustomerBillingRate> appliedList = FetchUtils.streamAll(
-			appliedCustomerBillRateApis::listAppliedCustomerBillingRates,   // method reference
+		List<CustomerBill> cbList = FetchUtils.streamAll(
+				customerBillApis::listCustomerBills,   // method reference
 	        null,                                     		// fields
 	        filter,               							// filter
 	        100                                       		// pageSize
 		).toList(); 
 		
-		return payments(appliedList);
+		payments(cbList);
+		return payments(cbList);
 	}
 	
 	/**
 	 * Execute payments by using the aggregate feature from a list of bill
 	 * 
-	 * @param appliedList
+	 * @param customerBills
 	 * @return String - provide the number of payments 
 	 */
-	public String payments(List<AppliedCustomerBillingRate> appliedList) {
+	public String payments(List<CustomerBill> customerBills) {
 		int num = 0;
+		List<String> noComplaintBills = new ArrayList<String>();
 		
-		if (appliedList != null && !appliedList.isEmpty()) {
-			logger.debug("Number of applied ready for billing: {}", appliedList.size());
+		if (customerBills != null && !customerBills.isEmpty()) {
+			logger.debug("Number of CustomerBill ready for billing: {}", customerBills.size());
 			
-			//aggregate - payment time
-			Map<String, List<AppliedCustomerBillingRate>> aggregates = new HashMap<String, List<AppliedCustomerBillingRate>>();
-			List<String> noComplaintBills = new ArrayList<String>();
-	
-			for (AppliedCustomerBillingRate applied : appliedList) {
-				//logger.debug("AppliedCustomerBillingRate payload to be billed: {}", applied.toJson());
-								
-				// check if exist the product
-				if(applied.getProduct() != null) {
-					logger.info("AppliedId {} must be billed", applied.getId());
-					
-					// SET keys with multiple attributes for the map<> aggregates
-		        	String endDate = getEndDate(applied);
-		        	String paymentPreAuthorizationExternalId = getPaymentPreAuthorizationExternalId(applied.getProduct().getId());
-		        	
-		        	if (paymentPreAuthorizationExternalId != null) {
-		        		// key = preAuthorizationId + endDate => i.e. 9d4fca3b-4bfa-4dba-a09f-348b8d504e44|2025-05-05
-			        	String key = paymentPreAuthorizationExternalId + CONCAT_KEY + endDate;
-
-			        	// add in the ArrayList the AppliedCustomerBillingRate
-			        	aggregates.computeIfAbsent(key, k -> new ArrayList<>()).add(applied);
-		        	} else {
-		        		noComplaintBills.add(applied.getId());
-		        		logger.warn("Couldn't found the paymentPreAuthorizationExternalId attribute from ProductCharacteristic");
-		        	}
-				} else {	
-					noComplaintBills.add(applied.getId());
-					 // product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic
-					logger.warn("Cannot found the product attribute for appliedId: {}", applied.getId());
+			//aggregate CB by same paymentPreAuthorizationExternalId - payment time
+			Map<String, List<CustomerBill>> aggregates = new HashMap<String, List<CustomerBill>>();
+			
+			for (CustomerBill cb : customerBills) {	
+				// Retrieve the Product id associated to the CB through their ACBRs
+				String productId=tmforumService.getProductIdOfCB(cb.getId());
+				
+				if(productId==null || productId.isBlank()) {
+					logger.warn("Cannot found the Product ID associated to the CB: {}", cb.getId());
 					logger.warn("Product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic");
-					
-					logger.warn("The applied {} cannot be update", applied.getId());
+					logger.warn("The CB {} cannot be payed skipped", cb.getId());
+					noComplaintBills.add(cb.getId());
+					continue;
 				}
+				
+				logger.debug("Product ID {} asssociated to CB with ID {}", productId,cb.getId());
+					
+		        String paymentPreAuthorizationExternalId =tmforumService.getPaymentPreAuthorizationExternalId(productId);
+		        
+		        if(paymentPreAuthorizationExternalId==null || paymentPreAuthorizationExternalId.isBlank()) {
+		        	logger.warn("Couldn't found the paymentPreAuthorizationExternalId attribute from ProductCharacteristic");
+		        	logger.warn("The CB {} cannot be payed skipped", cb.getId());
+		        	noComplaintBills.add(cb.getId());
+		        	continue;
+		        }
+		        	
+			     aggregates.computeIfAbsent(paymentPreAuthorizationExternalId, k -> new ArrayList<>()).add(cb);
 			}
 		
 			// payment
-			logger.debug("Size of list applied aggregates to pay: {}", aggregates.size());
-			int count = 0;
-	        for (Entry<String, List<AppliedCustomerBillingRate>> entry : aggregates.entrySet()) {
+			logger.debug("Size of aggregates CB to pay: {}", aggregates.size());
+	        for (Entry<String, List<CustomerBill>> entry : aggregates.entrySet()) {
 	        	
-	        	List<AppliedCustomerBillingRate> applied = entry.getValue();
-	        	logger.debug("List applied aggregates[{}] - contains num of applied: {}", ++count, applied.size());
+	        	List<CustomerBill> cbs = entry.getValue();
+	        	logger.debug("Entry with paymentPreAuthorizationExternalId '{}' contains num of CBs: {}", entry.getKey(), cbs.size());
 	        	
-	        	String key = entry.getKey();
-	        		        	
-	        	// retrieve the paymentPreAuthorizationExternalId from key
-	        	String paymentPreAuthorizationExternalId = key.substring(0, key.indexOf(CONCAT_KEY));
+	        	PaymentStartNonInteractive payment = getPayloadStartNonInteractive(entry.getKey(),cbs);
 	        	
-	        	String customerOrganizationId = getCustomerOrganizationId(applied.get(0).getProduct().getId());
+	        	if(payment==null) {
+	        		List<String> customerBillIds = customerBills.stream()
+	        		        .map(CustomerBill::getId)
+	        		        .collect(Collectors.toList());
+	        		String idsForLog = customerBillIds.stream()
+	        		        .collect(Collectors.joining(", ", "[", "]"));
 	        	
-	        	if (customerOrganizationId != null) {
-	        		// build the payload for EG Payment Gateway
-		        	PaymentStartNonInteractive payment = getPayloadStartNonInteractive(paymentPreAuthorizationExternalId, customerOrganizationId, applied);
-		        	
-		        	if (executePayment(payment, applied)) {
-		        		num = num + applied.size();
-		        	}
-	        	}else {
-	        		logger.error("Cannot build the Payment payload. The customerOrganizationId is null");
+	        		logger.error("Error generating Payment payload for entry with paymentPreAuthorizationExternalId {} and CBs {}", entry.getKey(),idsForLog);
+	        		noComplaintBills.addAll(customerBillIds);
+	        		continue;
 	        	}
+	        		
+				if(executePayment(payment, cbs)) {
+					logger.info("Payment executed for CBs {}", cbs.stream().map(CustomerBill::getId).collect(Collectors.joining(", ", "[", "]")));
+					num = num + cbs.size();
+				}
 	        }
 	        
-			// report not complaint bills - applied not billed yet
+			// report not complaint bills - cb not billed yet
 	        if (!noComplaintBills.isEmpty()) {
-	        	logger.info("Number of non-complaint applied: {}", noComplaintBills.size());
-	        	logger.info("The following applied cannot be billed: {}", String.join(", ", noComplaintBills));
+	        	logger.debug("Number of non-complaint CBs: {}", noComplaintBills.size());
+	        	logger.info("The following CBs cannot be billed: {}", String.join(", ", noComplaintBills));
 	        }
 			
 	        logger.info("The payment process scheduled has been terminated at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 			
-		}else {
-			logger.warn("The list of AppliedCustomerBillingRate to be billed is empty");
 		}
 		
 		String response = "Number of payments executed: " + num;
-		logger.info(response);
 		return response;
 	}
 	
 	/*
 	 * Create the payload for StartNonInteractive call
 	 */
-	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, String customerOrganizationId, List<AppliedCustomerBillingRate> applied) {
+	private PaymentStartNonInteractive getPayloadStartNonInteractive(String paymentPreAuthorizationExternalId, List<CustomerBill> cbs) {
 				
+		String productId= tmforumService.getProductIdOfCB(cbs.get(0).getId());
+		String customerOrganizationId= tmforumService.getCustomerOrganizationId(productId);
+		
+		if(customerOrganizationId==null || customerOrganizationId.isBlank()) {
+			logger.error("Cannot build the Payment payload. The customerOrganizationId is null for Product {} associated to CustomerBill {}", productId, cbs.get(0).getId());
+			return null;
+		}
+		
 		PaymentStartNonInteractive payment = PaymentStartNonInteractiveUtils.getPaymentStartNonInteractive(paymentPreAuthorizationExternalId, customerOrganizationId);
 		
-		for (AppliedCustomerBillingRate apply : applied) {
-			//logger.debug("AppliedCustomerBillingRate payload: {}", apply.toJson());
+		for (CustomerBill cb : cbs) {
+			String productProviderExternalId = tmforumService.getProductProviderExternalId(productId);
 			
-			// Let's suppose applyId and productId <> NULL 
-			String productProviderExternalId = getProductProviderExternalId(apply.getProduct().getId());
-			
-			float amount = 0;
-			if (apply.getTaxExcludedAmount().getValue() != null) {
-				amount = apply.getTaxIncludedAmount().getValue().floatValue();
-			}
-			
-			if (productProviderExternalId != null) {
-			
-				PaymentItem paymentItem = new PaymentItem();	        	
-	        	paymentItem.setAmount(amount);
-	        	paymentItem.setCurrency("EUR");
-	        	paymentItem.setProductProviderExternalId(productProviderExternalId);
-	        	paymentItem.setRecurring(true);
-	        	paymentItem.setPaymentItemExternalId(apply.getId());
-	        	
-	        	Map<String, String> attrs = new HashMap<String, String>();
-	        	// attrs.put("additionalProp1", "data1"); // list of attrs if need
-	        	paymentItem.setProductProviderSpecificData(attrs);
-	        	payment.getBaseAttributes().addPaymentItem(paymentItem);
-			
-			}else {
-				logger.error("Cannot build the Payment payload. The productProviderExternalId is null");
+			if(productProviderExternalId==null || productProviderExternalId.isBlank()) {
+				logger.error("Cannot build the Payment payload. The productProviderExternalId is null for Product {} associated to CustomerBill {}", productId, cbs.get(0).getId());
 				return null;
 			}
+			
+			// Generate PaymentItem
+			PaymentItem paymentItem = new PaymentItem();	        	
+        	paymentItem.setAmount(cb.getTaxIncludedAmount().getValue());
+        	paymentItem.setCurrency(cb.getTaxIncludedAmount().getUnit());
+        	paymentItem.setProductProviderExternalId(productProviderExternalId);
+        	paymentItem.setRecurring(true);
+        	paymentItem.setPaymentItemExternalId(cb.getId());
+        	
+        	Map<String, String> attrs = new HashMap<String, String>();
+        	// attrs.put("additionalProp1", "data1"); // list of attrs if need
+        	paymentItem.setProductProviderSpecificData(attrs);
+        	payment.getBaseAttributes().addPaymentItem(paymentItem);
 		}       
 		
 		return payment;
@@ -221,154 +202,50 @@ public class PaymentService {
 	 * @param paymentStartNonInteractive
 	 * @param applied
 	 * @return boolean - if the process has been completed successfully or not (include the saving/updating data in TM Forum)
+	 * @throws it.eng.dome.tmforum.tmf678.v4.ApiException 
 	 */
-	private boolean executePayment(PaymentStartNonInteractive paymentStartNonInteractive, List<AppliedCustomerBillingRate> applied) {
+	private boolean executePayment(PaymentStartNonInteractive paymentStartNonInteractive, List<CustomerBill> cbs){
 		
 		String token = vcverifier.getVCVerifierToken();
 		if (token != null) {
-			EGPaymentResponse egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
-			   
-			if (egpayment != null) {
-				
-				String paymentExternalId=egpayment.getPaymentExternalId();
-				logger.debug("PaymentExternalId: {}", paymentExternalId);
-				
-				List<Payout> payoutList = egpayment.getPayoutList();
-				Map<String, AppliedCustomerBillingRate> applyMap = applied.stream().collect(Collectors.toMap(AppliedCustomerBillingRate::getId, Function.identity()));
-				
-				logger.info("Updating {} applied in the PayoutList", payoutList.size());
-				
-				for (Payout payout : payoutList) {
-					logger.info("Get payout status: {}", payout.getState());
-				
-					// Get the status
-					Status statusEnum = Status.valueOf(payout.getState().toUpperCase());
-					String applyId = payout.getPaymentItemExternalId();
-										
-					if (applyId != null) {
-						logger.info("Get applyId: {}", applyId);
+			
+			try {
+				// Update State of CBs to "sent"
+				tmforumService.updateCustomerBillsState(cbs, StateValue.SENT);
+				EGPaymentResponse egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
+				   
+				if (egpayment != null) {
 					
-						AppliedCustomerBillingRate appliedCustomerBillingRate = applyMap.get(applyId);
-						
-						logger.info("Handling payment status: {}", statusEnum.name());
-						handlePaymentStatus(statusEnum, appliedCustomerBillingRate, paymentExternalId);
-						
-					} else {
-						//TODO - Manage if cannot find the paymentItemExternalId -> Payment state = PROCESSED => how it must update the appliedCustomerBillingRate
-												
-						logger.warn("Payout: {}", payout.toJson());
-						logger.warn("Payout state: {}", statusEnum);
-						
-						// cannot manage the appliedCustomerBillingRate. No applyId (paymentItemExternalId) provided
-						logger.error("Cannot find the paymentItemExternalId from Payout. The paymentItemExternalId is the applyId");
+					String paymentExternalId=egpayment.getPaymentExternalId();
+					//logger.debug("PaymentExternalId: {}", paymentExternalId);
+					
+					List<Payout> payoutList = egpayment.getPayoutList();
+					//Map<String, CustomerBill> cbMap = cbs.stream().collect(Collectors.toMap(CustomerBill::getId, Function.identity()));
+					
+					logger.debug("Updating {} CB in the PayoutList for payment transaction with id {}", payoutList.size(), paymentExternalId);
+					
+					for (Payout payout : payoutList) {
+						handlePaymentPayout(payout, paymentExternalId);
 					}
+					
+					return true;
+				}else {
+					List<String> customerBillIds = cbs.stream()
+	        		        .map(CustomerBill::getId)
+	        		        .collect(Collectors.toList());
+					logger.error("Error: EG Payment Gateway couldn't pay the CustomerBill: {}", customerBillIds.stream().collect(Collectors.joining(",")));
+					tmforumService.restoreCustomerBillsState(customerBillIds);
+					return false;
 				}
-				
-				return true;
-			}else {
-				logger.error("Error: EG Payment Gateway couldn't pay the applied: {}", applied.stream().map(AppliedCustomerBillingRate::getId).collect(Collectors.joining(",")));
+			}catch (it.eng.dome.tmforum.tmf678.v4.ApiException e){
+				logger.error("Error executing payment: {}",e.getMessage());
 				return false;
 			}
+			
 		} else {
 			logger.error("Error to get the Token from VC Verfier Server");
 			return false;
 		}
-	}
-	
-	
-	/*
-	 * Retrieve the paymentPreAuthorizationExternalId from the productCharacteristic 
-	 */
-	private String getPaymentPreAuthorizationExternalId(String productId) {
-		
-		final String PAYMENT_PRE_AUTHORIZATION = "paymentPreAuthorization";
-
-		if (productId != null) {
-
-			try {
-				Product product = productInventoryApis.getProduct(productId, null);
-				if (product != null) {
-					List<Characteristic> prodChars = product.getProductCharacteristic();
-
-					if (prodChars != null && !prodChars.isEmpty()) {
-						for (Characteristic c : prodChars) {
-							if (c.getName().trim().startsWith(PAYMENT_PRE_AUTHORIZATION)) {		
-								logger.info("Found the attribute {} in the ProductCharacteristic", c.getName());
-								if (c.getValue() != null) {								
-									logger.info("Found the {} value: {}", c.getName(), c.getValue().toString());
-									return c.getValue().toString();
-								} else {
-									logger.error("The {} is null from product {}", c.getName(), productId);
-									return null;
-								}
-							}
-						}
-					}				
-				}	
-			} catch (ApiException e) {
-				logger.error("Error: {}", e.getMessage());
-				return null;
-			}
-						
-		}
-
-		logger.error("Couldn't retrieve the paymentPreAuthorizationExternalId from product {}", productId);
-		return null;
-	}
-	
-	/*
-	 * Retrieve the ProductProviderExternalId from the relatedParty - role => ProviderType 
-	 */
-	private String getProductProviderExternalId(String productId) {
-
-		if (productId != null) {
-			
-			try {
-				Product product = productInventoryApis.getProduct(productId, null);			
-				if (product != null) {
-					List<RelatedParty> parties = product.getRelatedParty();
-					for (RelatedParty party : parties) {
-						if (ProviderType.isValid(party.getRole())) {
-							logger.debug("Retrieved productProviderExternalId: {}", party.getId());
-							return party.getId(); 
-						}
-					}
-				}
-			} catch (ApiException e) {
-				logger.error("Error: {}", e.getMessage());
-				return null;
-			}
-		}
-		
-		logger.error("Couldn't retrieve the productProviderExternalId from product {}", productId);
-		return null;
-	}
-			
-	/*
-	 * Retrieve the CustomerOrganizationId from the relatedParty - role => CustomerType 
-	 */
-	private String getCustomerOrganizationId(String productId) {
-		
-		if (productId != null) {
-			try {
-				Product product = productInventoryApis.getProduct(productId, null);
-				if (product != null) {
-					List<RelatedParty> parties = product.getRelatedParty();
-					for (RelatedParty party : parties) {
-						if (CustomerType.isValid(party.getRole())) {
-							logger.debug("Retrieved customerOrganizationId: {}", party.getId());
-							return party.getId(); 
-						}
-					}
-				}
-			} catch (ApiException e) {
-				logger.error("Error: {}", e.getMessage());
-				return null;
-			}
-		}
-		
-		logger.error("Couldn't retrieve the customerOrganizationId from product {}", productId);
-		return null;
 	}
 	
 		
@@ -378,55 +255,44 @@ public class PaymentService {
 	    PENDING
 	}
 	
-	private void handlePaymentStatus(Status status, AppliedCustomerBillingRate applied, String paymentExternalId) {
-	    switch (status) {
+	
+	private void handlePaymentPayout(@NotNull Payout payout, @NotNull String paymentExternalId) throws it.eng.dome.tmforum.tmf678.v4.ApiException{
+		
+		// Get the status
+		Status statusEnum = Status.valueOf(payout.getState().toUpperCase());
+		// Get the status
+		String cbId = payout.getPaymentItemExternalId();
+		logger.info("Handling payment status {} for CustomeBill {}",statusEnum, cbId);
+		
+	    switch (statusEnum) {
 	        case PROCESSED:
-	            handleStatusProcessed(applied, paymentExternalId);
+	            handleStatusProcessed(payout, paymentExternalId);
 	            break;
 	        case PENDING:
-	            handleStatusPending(applied);
+	            handleStatusPending(cbId);
 	            break;
 	        case FAILED:
-	            handleStatusFailed(applied);
+	            handleStatusFailed(cbId);
 	            break;
 	    }
 	}
-
-	private void handleStatusProcessed(AppliedCustomerBillingRate applied, String paymentExternalId) {
-				
-		if (tmforumService.updateAppliedCustomerBillingRate(applied, paymentExternalId)) { // set isBilled = true and add CustomerBill (BillRef)
-			logger.info("The appliedCustomerBillingRateId {} with type {} has been updated successfully", applied.getId(), applied.getType());
-		} else {
-			logger.error("Couldn't update appliedCustomerBillingRate {} in TMForum", applied.getId());
-		}	
+	
+	private void handleStatusProcessed(Payout payout, String paymentExternalId) throws it.eng.dome.tmforum.tmf678.v4.ApiException {
+		
+		tmforumService.updatePaidCustomerBill(payout,paymentExternalId);
+		
+		logger.info("The CustomeBill {} with status {} has been updated successfully", payout.getPaymentItemExternalId(),payout.getState());
 	}
 
-	private void handleStatusPending(AppliedCustomerBillingRate applied) {
-		
-		if (tmforumService.setIsBilled(applied, true)) { // set isBilled = true
-			logger.info("IsBilled has been updated successfully for the appliedCustomerBillingRateId {}", applied.getId());
-		} else {
-			logger.error("Couldn't set isBilled for the appliedCustomerBillingRate {} in TMForum", applied.getId());
-		}	
+	private void handleStatusPending(String cbId) {
+		logger.info("Status Pending: no update for the CustomerBill {}", cbId);
 	}
 	
-	private void handleStatusFailed(AppliedCustomerBillingRate applied) {
-		logger.info("No update for the appliedCustomerBillingRateId {}", applied.getId());
-	}
-	
-	
-	private String getEndDate(AppliedCustomerBillingRate applied) {
-		
-		if (applied.getPeriodCoverage() != null && applied.getPeriodCoverage().getEndDateTime() != null) {
-			
-			OffsetDateTime endDateTime = applied.getPeriodCoverage().getEndDateTime();
-			return endDateTime.toLocalDate().toString();
-		}else {
-			
-			OffsetDateTime date = OffsetDateTime.now();
-			String onlyDate = date.toLocalDate().toString();
-			logger.warn("Cannot retrive the EndDateTime from PeriodCoverage. It will be set the current DateTime: {}", onlyDate);
-			return onlyDate;
-		}
+	private void handleStatusFailed(String cbId) throws it.eng.dome.tmforum.tmf678.v4.ApiException {
+		logger.info("Status Failed: the state of CustomerBill {} is restored to new", cbId);
+		if(tmforumService.isCustomerBillPartiallyPaid(cbId))
+			tmforumService.updateCustomerBillState(cbId, StateValue.PARTIALLY_PAID);
+		else
+			tmforumService.updateCustomerBillState(cbId, StateValue.NEW);
 	}
 }

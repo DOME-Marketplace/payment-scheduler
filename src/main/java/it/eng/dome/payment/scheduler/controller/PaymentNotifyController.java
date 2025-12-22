@@ -2,7 +2,6 @@ package it.eng.dome.payment.scheduler.controller;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +22,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 
 import it.eng.dome.payment.scheduler.dto.PaymentStatus;
 import it.eng.dome.payment.scheduler.service.TMForumService;
+import it.eng.dome.tmforum.tmf678.v4.ApiException;
 
 @RestController
 @RequestMapping("/payment")
@@ -54,16 +54,18 @@ public class PaymentNotifyController {
 					if (issuer.equalsIgnoreCase(iss)) {
 						
 						Status statusEnum = Status.valueOf(paymentStatus.getState().toUpperCase());
-						List<String> appliedIds = paymentStatus.getPaymentItemExternalIds();
+						List<String> cbIds = paymentStatus.getPaymentItemExternalIds();
 						String paymentExternalId = paymentStatus.getPaymentExternalId();
 						
-						logger.info("Handling {} payment status with {} applied and paymentExternalId='{}'", statusEnum.name(), appliedIds.size(), paymentExternalId);
-						List<String> appliedNotUpdated = handlePaymentStatus(statusEnum, appliedIds, paymentExternalId);
-	
-						if (!appliedNotUpdated.isEmpty()) {
-							String msg = "The following " + appliedIds.size() + " applied cannot be updated: " + String.join(", ", appliedNotUpdated);
+						logger.info("Handling {} payment status with {} CustomerBills and paymentExternalId='{}'", statusEnum.name(), cbIds.size(), paymentExternalId);
+						
+						try {
+							handlePaymentStatus(statusEnum, cbIds, paymentExternalId);
+						}catch (ApiException e){
+							String msg = "Error handling PaymentStatus "+statusEnum.name()+" for CbIds "+String.join(", ", cbIds)+
+									" and paymentExternalId "+paymentExternalId;
 							logger.error(msg);
-							return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of("error", msg));
+							return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", msg));
 						}
 						
 					} else {
@@ -118,53 +120,25 @@ public class PaymentNotifyController {
 	    FAILED
 	}
 	
-	private List<String> handlePaymentStatus(Status status, List<String> applied, String paymentExternalId) {
+	private void handlePaymentStatus(Status status, List<String> cbIds, String paymentExternalId) throws ApiException {
 	    switch (status) {
 	        case SUCCEEDED:
-	            return handleStatusSucceeded(applied, paymentExternalId);
+	            handleStatusSucceeded(cbIds, paymentExternalId);
 	        case FAILED:
-	            return handleStatusFailed(applied);
+	            handleStatusFailed(cbIds);
 	    }
 	    
-		return new ArrayList<String>();
 	}
 	
-	private List<String> handleStatusSucceeded(List<String> applied, String paymentExternalId) {
+	private void handleStatusSucceeded(List<String> cbIds, String paymentExternalId) throws ApiException {
+		logger.info("Handling Successful payment for CBs with ids {}", String.join(", ", cbIds));
+		tmforumService.updatePaymentSuccessfulNotification(cbIds, paymentExternalId);
 		
-		// return the appliedIds that cannot be found (not updated)
-		List<String> appliedIdsNotSucceeded = new ArrayList<String>();
-		
-		for (String id : applied) {
-			
-			if (tmforumService.addCustomerBill(id,paymentExternalId)) { 
-				// set isBilled = true and add CustomerBill (BillRef) to applied
-				logger.info("The appliedCustomerBillingRateId {} has been updated successfully", id);
-			} else {
-				// add appliedId in the list
-				appliedIdsNotSucceeded.add(id);
-				logger.error("Couldn't update appliedCustomerBillingRate {} in TMForum", id);
-			}	
-		}
-		
-		return appliedIdsNotSucceeded;
 	}
 	
-	private List<String> handleStatusFailed(List<String> applied) {
+	private void handleStatusFailed(List<String> cbIds) throws ApiException {
 		
-		// return the appliedIds that cannot be found (not updated)
-		List<String> appliedIdsNotBilled = new ArrayList<String>();
-
-		for (String id : applied) {
-			
-			if (tmforumService.setIsBilled(id, false)) { // set isBilled = false
-				logger.info("IsBilled has been updated successfully for the appliedCustomerBillingRateId {}", id);
-			} else {
-				// add appliedId in the list
-				appliedIdsNotBilled.add(id);
-				logger.error("Couldn't set isBilled for the appliedCustomerBillingRate {} in TMForum", id);
-			}	
-		}
-		
-		return appliedIdsNotBilled;
+		logger.info("Handling Failed payment for CBs with ids {}", String.join(", ", cbIds));
+		tmforumService.restoreCustomerBillsState(cbIds);
 	}
 }

@@ -1,8 +1,10 @@
 package it.eng.dome.payment.scheduler.service;
 
-import java.time.OffsetDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,199 +12,368 @@ import org.springframework.stereotype.Service;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerBillApis;
-import it.eng.dome.tmforum.tmf678.v4.ApiException;
+import it.eng.dome.brokerage.api.ProductInventoryApis;
+import it.eng.dome.brokerage.api.fetch.FetchUtils;
+import it.eng.dome.payment.scheduler.config.AppConfig;
+import it.eng.dome.payment.scheduler.model.EGPaymentResponse.Payout;
+import it.eng.dome.payment.scheduler.util.CustomerType;
+import it.eng.dome.payment.scheduler.util.ProviderType;
+import it.eng.dome.tmforum.tmf637.v4.ApiException;
+import it.eng.dome.tmforum.tmf637.v4.model.Characteristic;
+import it.eng.dome.tmforum.tmf637.v4.model.Product;
+import it.eng.dome.tmforum.tmf637.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRateUpdate;
 import it.eng.dome.tmforum.tmf678.v4.model.AppliedPayment;
-import it.eng.dome.tmforum.tmf678.v4.model.BillRef;
-import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillCreate;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBillUpdate;
 import it.eng.dome.tmforum.tmf678.v4.model.Money;
 import it.eng.dome.tmforum.tmf678.v4.model.PaymentRef;
-import it.eng.dome.tmforum.tmf678.v4.model.RelatedParty;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
+import jakarta.validation.constraints.NotNull;
 
 @Service
 public class TMForumService {
-	
+
+    //private final AppConfig appConfig;
+
 	private static final Logger logger = LoggerFactory.getLogger(TMForumService.class);
-	
+
 	private final AppliedCustomerBillRateApis appliedCustomerBillRateApis;
 	private final CustomerBillApis customerBillApis;
-	
-	public TMForumService(AppliedCustomerBillRateApis appliedCustomerBillRateApis, CustomerBillApis customerBillApis) {
+	private final ProductInventoryApis productInventoryApis;
+
+	public TMForumService(AppliedCustomerBillRateApis appliedCustomerBillRateApis, CustomerBillApis customerBillApis, ProductInventoryApis productInventoryApis, AppConfig appConfig) {
 		this.appliedCustomerBillRateApis = appliedCustomerBillRateApis;
-		this.customerBillApis = customerBillApis;		
+		this.customerBillApis = customerBillApis;
+		this.productInventoryApis= productInventoryApis;
+		//this.appConfig = appConfig;
 	}
 	
+	/**
+	 * Updates the specified {@link CustomerBill} with the specified {@link StateValue}
+	 * @param cbId the identifier of the CustomerBill to update
+	 * @param state the new state 
+	 * @throws ApiException if an error occurs during the update of the CustomerBill in TMForum
+	 */
+	public void updateCustomerBillState(@NotNull String cbId, @NotNull StateValue state) throws it.eng.dome.tmforum.tmf678.v4.ApiException {
+
+		CustomerBillUpdate update = new CustomerBillUpdate();
+		update.setState(state);
+
+		customerBillApis.updateCustomerBill(cbId, update);
+		logger.debug("Updated CustomerBill with id: {} with state '{}' to the new state '{}'", cbId, state.getValue(), update.getState().getValue());
+	}
 
 	/**
-	 * This method update the AppliedCustomerBillingRate setting isBilled attribute to true and creating a CustomerBill (BillRef)
-	 * 
-	 * @param appliedId
-	 * @return
+	 * Updates the {@link CustomerBill} in the specified list with the specified {@link StateValue}
+	 * @param cbs the CustomerBill(s) to update
+	 * @param state the new state 
+	 * @throws ApiException if an error occurs during the update of the CustomerBill in TMForum
 	 */
-	public boolean addCustomerBill(String appliedId, String paymentExternalId) {
-		logger.info("Add the CustomerBill for appliedId: {}", appliedId);
+	public void updateCustomerBillsState(@NotNull List<CustomerBill> cbs, @NotNull StateValue state) throws it.eng.dome.tmforum.tmf678.v4.ApiException {
 
-		try {
-			AppliedCustomerBillingRate applied = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(appliedId, null);
-			
-			if (applied != null) {
-				return updateAppliedCustomerBillingRate(applied, paymentExternalId);
-			}else {
-				logger.info("Cannot found the applied with id: {} to add the CustomerBill", appliedId);
-				return false;	
-			}
-
-		} catch (ApiException e) {
-			logger.error("Error: {}", e.getMessage());
-			return false;
+		for (CustomerBill cb : cbs) {
+			this.updateCustomerBillState(cb.getId(), state);
 		}
 	}
 	
-	
-	/**
-	 * This method update the AppliedCustomerBillingRate setting isBilled attribute to true and creating a CustomerBill (BillRef)
-	 * 
-	 * @param applied
-	 * @return
-	 */
-	public boolean updateAppliedCustomerBillingRate(AppliedCustomerBillingRate applied, String paymentExternalId) {
-		logger.info("Update the AppliedCustomerBillingRate for id: {}", applied.getId());		
-		
-		logger.debug("Creating CustomerBill to set the BillRef in AppliedCustomerBillingRate");
-		//create a new CustomerBill to set in the AppliedCustomerBillingRate (BillRef)
-		CustomerBillCreate customerBill = new CustomerBillCreate();
-		customerBill.setBillingAccount(applied.getBillingAccount());
-		customerBill.setBillDate(OffsetDateTime.now());
-		customerBill.setBillingPeriod(applied.getPeriodCoverage());
-		customerBill.setState(StateValue.SETTLED);	
-		customerBill.setTaxExcludedAmount(applied.getTaxExcludedAmount());
-		customerBill.setTaxIncludedAmount(applied.getTaxIncludedAmount());
-		
-		// Set customerBill.amountDue
-		// Assumption
-		// When the CustomerBill has been created the bill has been successfully paid (all the amount due)
-		// In the current implementation a CustomerBill is created for each ACBR
-		// The amountDue is set to "0" (i.e., all the amount due has been paid)
-		//
-		Money amountDue=new Money();
-		amountDue.setUnit("EUR");
-		amountDue.setValue(0f);
-		customerBill.setAmountDue(amountDue);
-		
-		// Set customerBill.appliedPayment
-		// Assumption
-		// The list of the appliedPayment is valorized with an aplliedPayment
-		// The amount of the payment is set to the taxIncluededAmount
-		// The reference to the payment is set to the paymentExternalId
-		List<AppliedPayment> appliedPayments=new ArrayList<AppliedPayment>();
-		AppliedPayment appliedPayment=new AppliedPayment();
-		appliedPayment.setAppliedAmount(applied.getTaxIncludedAmount());
-		PaymentRef paymentRef=new PaymentRef();
-		paymentRef.setId(paymentExternalId);
-		appliedPayment.setPayment(paymentRef);
-		appliedPayments.add(appliedPayment);
-		customerBill.setAppliedPayment(appliedPayments);
-		
-		//check on RelatedParty if is null
-		List<RelatedParty> parties = new ArrayList<RelatedParty>();
-		if (applied.getRelatedParty() != null) {
-			logger.warn("Get num of RelatedParty from applied: {}", applied.getRelatedParty().size());
-			try {
-				parties = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(applied.getId(), null).getRelatedParty();
-			} catch (ApiException e) {
-				logger.error("Cannot be found the RelatedParty for appliedId: {}", applied.getId());
-				//return false;
+	public void restoreCustomerBillsState(@NotNull List<String> cbIds) throws it.eng.dome.tmforum.tmf678.v4.ApiException {
+		for (String cbId:cbIds) {
+			if(this.isCustomerBillPartiallyPaid(cbId)) {
+				updateCustomerBillState(cbId, StateValue.PARTIALLY_PAID);
+				logger.debug("Restore CB {} to state PARTIALLY_PAID", cbId);
+			}
+			else {
+				updateCustomerBillState(cbId, StateValue.NEW);
+				logger.debug("Restore CB {} to state NEW", cbId);
 			}
 		}
-		
-		//FIXME - applied list cannot provide all parties, but just one!!!
-		customerBill.setRelatedParty(/*applied.getRelatedParty()*/parties);
-
-		try {
-			String idCustomerBill = customerBillApis.createCustomerBill(customerBill);
-		
-			if (idCustomerBill != null) {
-				// Creating the BillRef		
-				BillRef bill = new BillRef();
-				bill.setId(idCustomerBill);
-				bill.setHref(idCustomerBill);
-				logger.info("Set id {} in the BillRef", bill.getId());
-				
-				// create AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate
-				logger.debug("Creating an AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate with id: {}", applied.getId());	
-				AppliedCustomerBillingRateUpdate update = new AppliedCustomerBillingRateUpdate();
-				update.setIsBilled(true);
-				update.setBill(bill);
-				
-				logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
-				appliedCustomerBillRateApis.updateAppliedCustomerBillingRate(applied.getId(), update);
-				return true;
-			} 
-		} catch (ApiException e) {
-			logger.error("CustomerBill cannot be create");
-			return false;
-		}
-		return false;
 	}
 	
-	/**
-	 * This method set isBilled attribute as parameter billed for the AppliedCustomerBillingRateId
-	 * 
-	 * @param appliedId
-	 * @param billed
-	 * @return
-	 */
-	public boolean setIsBilled(String appliedId, boolean billed) {
-
-		logger.info("Set isBilled = {} for appliedId: {}", billed, appliedId);		
+	public boolean isCustomerBillPartiallyPaid(@NotNull String cbId) throws it.eng.dome.tmforum.tmf678.v4.ApiException {
+		CustomerBill cb=customerBillApis.getCustomerBill(cbId, null);
 		
-		try {
-			AppliedCustomerBillingRate applied = appliedCustomerBillRateApis.getAppliedCustomerBillingRate(appliedId, null);
-	
-			if (applied != null) {
-				return setIsBilled(applied, billed);
-			}else {
-				logger.info("Cannot found the applied with id: {} to set isBilled attribute", appliedId);
-				return false;	
-			}
-		} catch (ApiException e) {
-			logger.error("Error: {}", e.getMessage());
-			return false;
-		}
-	}
-	
-	
-	/**
-	 * This method set isBilled attribute as parameter billed in the AppliedCustomerBillingRate applied
-	 * 
-	 * @param applied
-	 * @param billed
-	 * @return
-	 */
-	public boolean setIsBilled(AppliedCustomerBillingRate applied, boolean billed) {
-		logger.info("Setting isBilled to {}", billed);		
-			
-		// create AppliedCustomerBillingRateUpdate object to update the AppliedCustomerBillingRate
-		logger.debug("Creating an AppliedCustomerBillingRateUpdate object to set isBilled for the AppliedCustomerBillingRate with id: {}", applied.getId());	
-		AppliedCustomerBillingRateUpdate update = new AppliedCustomerBillingRateUpdate();
-		update.setIsBilled(billed);
-
-		if (!billed) { // if isBilled = false -> need to reset the BillingAccount
-			logger.debug("Required to reset the BillingAccount for AppliedCustomerBillingRateUpdate if isBilled = {}", billed);
-			update.setBillingAccount(applied.getBillingAccount());
-		}
-				
-		logger.debug("Payload of AppliedCustomerBillingRateUpdate: {}", applied.toJson());	
-
-		try {
-			appliedCustomerBillRateApis.updateAppliedCustomerBillingRate(applied.getId(), update);
+		// If the total amount to paid is major to the remaining amount the CB has been partially paid 
+		if(cb.getTaxIncludedAmount().getValue()>cb.getRemainingAmount().getValue())
 			return true;
-		} catch (ApiException e) {
-			logger.error("Error: {}", e.getMessage());
+		else
 			return false;
+		
+	}
+	
+	/**
+	 * Updates the CustomerBill associated to the specified {@link Payout}
+	 * 
+	 * @param payout the {@link Payout} with indication of the paid CustomerBill
+	 * @param paymentExternalId the identifier of the payment transaction
+	 * @throws it.eng.dome.tmforum.tmf678.v4.ApiException If an error occurs during the update of the CustomerBill
+	 */
+	public void updatePaidCustomerBill(@NotNull Payout payout, @NotNull String paymentExternalId) throws it.eng.dome.tmforum.tmf678.v4.ApiException{
+		
+		CustomerBill cb=customerBillApis.getCustomerBill(payout.getPaymentItemExternalId(), null);
+
+		float amountPaid= payout.getAmount();
+		
+		if(amountPaid<=0) {
+			logger.warn("The amount paied for CustomerBill {} in the payment transaction {} is minor or equals to zero",cb.getId(), paymentExternalId);
+			
+			if(this.isCustomerBillPartiallyPaid(cb.getId()))
+				this.updateCustomerBillState(cb.getId(), StateValue.PARTIALLY_PAID);
+			else
+				this.updateCustomerBillState(cb.getId(), StateValue.NEW);
+			
+		}else {
+			CustomerBillUpdate update = new CustomerBillUpdate();
+			
+			// Update admountDue
+			float updatedAmountDue =
+			        BigDecimal.valueOf(cb.getAmountDue().getValue())
+			                .subtract(BigDecimal.valueOf(amountPaid))
+			                .floatValue();
+			Money amountDueMoney=new Money();
+			amountDueMoney.setValue(updatedAmountDue);
+			amountDueMoney.setUnit(cb.getAmountDue().getUnit());
+			update.setAmountDue(amountDueMoney);
+			
+			// Update remainingAmount
+			float updatedRemainingAmount =
+			        BigDecimal.valueOf(cb.getRemainingAmount().getValue())
+			                .subtract(BigDecimal.valueOf(amountPaid))
+			                .floatValue();
+			Money remainingAmountMoney=new Money();
+			remainingAmountMoney.setValue(updatedRemainingAmount);
+			remainingAmountMoney.setUnit(cb.getRemainingAmount().getUnit());
+			update.setRemainingAmount(remainingAmountMoney);
+			
+			// Update AppliedPayment
+			List<AppliedPayment> appliedPayments;
+			if(cb.getAppliedPayment()==null)
+				appliedPayments=new ArrayList<AppliedPayment>();
+			else {
+				appliedPayments=cb.getAppliedPayment();
+			}
+			
+			AppliedPayment payment=new AppliedPayment();
+			PaymentRef paymentRef=new PaymentRef();
+			paymentRef.setId(paymentExternalId);
+			payment.setPayment(paymentRef);
+			Money appliedAmount=new Money();
+			appliedAmount.setValue(amountPaid);
+			appliedAmount.setUnit(payout.getCurrency());
+			
+			payment.setAppliedAmount(appliedAmount);
+			appliedPayments.add(payment);
+			update.setAppliedPayment(appliedPayments);
+			
+			if(updatedRemainingAmount>0)
+				update.setState(StateValue.PARTIALLY_PAID);
+			else
+				update.setState(StateValue.SETTLED);
+			
+			customerBillApis.updateCustomerBill(cb.getId(), update);
+			logger.debug("CB with id {} has been updated successful to state {}",update.getState().getValue());
+
 		}
+	}
+	
+	/**
+	 * FIXME
+	 * Updates the specified paid {@link CustomerBill} after receiving a SUCCESSFUL notification from the Payment Service
+	 * TO FIX: At the moment the Payment Service doesn't provide in the notification the amount paid, therefore we assume that partial payments are not allowed
+	 * We consider that all the amount due has been paid.   
+	 * 
+	 * @param cbIds the identifier of the {@link CustomerBill} to update
+	 * @param paymentExternalId the identifier of the payment transaction
+	 * @throws it.eng.dome.tmforum.tmf678.v4.ApiException If an error occurs during the update of the CustomerBill
+	 */
+	public void updatePaymentSuccessfulNotification(@NotNull List<String> cbIds, @NotNull String paymentExternalId) throws it.eng.dome.tmforum.tmf678.v4.ApiException{
+		
+		for(String cbId: cbIds) {
+			CustomerBill cb=customerBillApis.getCustomerBill(cbId, null);
+			
+			// We assume if a successful notification is received al the amountDue has been paid (no partial payments)
+			float amountPaid= cb.getAmountDue().getValue();
+			
+			CustomerBillUpdate update = new CustomerBillUpdate();
+				
+			// Update admountDue to 0
+			float updatedAmountDue = 0f;
+
+			Money amountDueMoney=new Money();
+			amountDueMoney.setValue(updatedAmountDue);
+			amountDueMoney.setUnit(cb.getAmountDue().getUnit());
+			update.setAmountDue(amountDueMoney);
+				
+			// Update remainingAmount to 0
+			float updatedRemainingAmount = 0f;
+
+			Money remainingAmountMoney=new Money();
+			remainingAmountMoney.setValue(updatedRemainingAmount);
+			remainingAmountMoney.setUnit(cb.getRemainingAmount().getUnit());
+			update.setRemainingAmount(remainingAmountMoney);
+				
+			// Update AppliedPayment
+			List<AppliedPayment> appliedPayments;
+			if(cb.getAppliedPayment()==null)
+				appliedPayments=new ArrayList<AppliedPayment>();
+			else {
+				appliedPayments=cb.getAppliedPayment();
+			}
+			
+			AppliedPayment payment=new AppliedPayment();
+			PaymentRef paymentRef=new PaymentRef();
+			paymentRef.setId(paymentExternalId);
+			payment.setPayment(paymentRef);
+			Money appliedAmount=new Money();
+			appliedAmount.setValue(amountPaid);
+			appliedAmount.setUnit(cb.getAmountDue().getUnit());
+			
+			payment.setAppliedAmount(appliedAmount);
+			appliedPayments.add(payment);
+			update.setAppliedPayment(appliedPayments);
+			
+
+			update.setState(StateValue.SETTLED);
+			
+			customerBillApis.updateCustomerBill(cb.getId(), update);
+			logger.debug("CB with id {} has been updated successful to state {}",update.getState().getValue());
+
+		}
+	}
+	
+	/**
+	 * Retrieves the identifier of the {@link Product} associated to the specified {@link CustomerBill} through its {@link AppliedCustomerBillingRate}
+	 * 
+	 * @param cbId the identifier of the CustomerBill
+	 * @return the identifier of the Product associated to the CustomeBill, null if not found
+	 */
+	public String getProductIdOfCB(@NotNull String cbId) {
+		
+		 Map<String, String> filter = new HashMap<>();
+        filter.put("bill.id", cbId);
+        
+        AppliedCustomerBillingRate acbr =
+       		    FetchUtils.streamAll(
+       		    		appliedCustomerBillRateApis::listAppliedCustomerBillingRates,    // method reference
+       	                 null,     // fields
+       	                 filter,   // filter
+       	                100       // pageSize
+       	         ).findFirst()
+       		      .orElse(null);
+        
+        if(acbr==null) {
+       	 logger.info("No ACBR found for Customer Bill with id {}: ", cbId);
+       	 return null;
+        }else {
+       	 if(acbr.getProduct()!=null) {
+       		 return acbr.getProduct().getId();
+       	 }else {
+       		 logger.info("No ProductRef present in the ACBR with id {}: ", acbr.getId());
+           	 return null;
+       	 }
+        }
+	}
+	
+
+	/**
+	 * Retrieves the identifier of the Organization associated to the specified Product's identifier with role Buyer
+	 * @param productId the identifier of the {@link Product}
+	 * @return the identifier of the Organization with role Buyer, null if not found
+	 */
+	public String getCustomerOrganizationId(@NotNull String productId){
+		
+		if (productId != null) {
+			try {
+				Product product = productInventoryApis.getProduct(productId, null);
+				if (product != null) {
+					List<RelatedParty> parties = product.getRelatedParty();
+					for (RelatedParty party : parties) {
+						if (CustomerType.isValid(party.getRole())) {
+							logger.debug("Retrieved customerOrganizationId: {}", party.getId());
+							return party.getId(); 
+						}
+					}
+				}
+			} catch (ApiException e) {
+				logger.error("Error: {}", e.getMessage());
+				return null;
+			}
+		}
+		
+		logger.error("Couldn't retrieve the customerOrganizationId from product {}", productId);
+		return null;
+	}
+	
+	/**
+	 * Retrieves the paymentPreAuthorizationExternalId from the productCharacteristic of the specified Product's identifier
+	 * @param productId the identifier of the {@link Product}
+	 * @return the paymentPreAuthorizationExternalId of the specified Product, null if not found
+	 */
+	public String getPaymentPreAuthorizationExternalId(@NotNull String productId) {
+		
+		final String PAYMENT_PRE_AUTHORIZATION = "paymentPreAuthorization";
+
+		if (productId != null) {
+
+			try {
+				Product product = productInventoryApis.getProduct(productId, null);
+				if (product != null) {
+					List<Characteristic> prodChars = product.getProductCharacteristic();
+
+					if (prodChars != null && !prodChars.isEmpty()) {
+						for (Characteristic c : prodChars) {
+							if (c.getName().trim().startsWith(PAYMENT_PRE_AUTHORIZATION)) {		
+								logger.info("Found the attribute {} in the ProductCharacteristic", c.getName());
+								if (c.getValue() != null) {								
+									logger.info("Found the {} value: {}", c.getName(), c.getValue().toString());
+									return c.getValue().toString();
+								} else {
+									logger.error("The {} is null from product {}", c.getName(), productId);
+									return null;
+								}
+							}
+						}
+					}				
+				}	
+			} catch (ApiException e) {
+				logger.error("Error: {}", e.getMessage());
+				return null;
+			}
+						
+		}
+
+		logger.error("Couldn't retrieve the paymentPreAuthorizationExternalId from product {}", productId);
+		return null;
+	}
+	
+	/**
+	 * Retrieves the identifier of the Organization associated to the specified Product's identifier with role Seller
+	 * @param productId the identifier of the {@link Product}
+	 * @return the identifier of the Organization with role Seller, null if not found
+	 */
+	public String getProductProviderExternalId(@NotNull String productId) {
+
+		if (productId != null) {
+			
+			try {
+				Product product = productInventoryApis.getProduct(productId, null);			
+				if (product != null) {
+					List<RelatedParty> parties = product.getRelatedParty();
+					for (RelatedParty party : parties) {
+						if (ProviderType.isValid(party.getRole())) {
+							logger.debug("Retrieved productProviderExternalId: {}", party.getId());
+							return party.getId(); 
+						}
+					}
+				}
+			} catch (ApiException e) {
+				logger.error("Error: {}", e.getMessage());
+				return null;
+			}
+		}
+		
+		logger.error("Couldn't retrieve the productProviderExternalId from product {}", productId);
+		return null;
 	}
 
 }
