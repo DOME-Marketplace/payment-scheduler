@@ -66,13 +66,13 @@
 		<dependency>
 			<groupId>it.eng.dome.tmforum-sdk</groupId>
 			<artifactId>tmf678-v4</artifactId>
-			<version>2.1.2</version>
+			<version>2.1.4</version>
 		</dependency>
 		<!--  TMF637 Product Inventory Management  -->
 		<dependency>
 			<groupId>it.eng.dome.tmforum-sdk</groupId>
 			<artifactId>tmf637-v4</artifactId>
-			<version>2.1.1</version>
+			<version>2.1.2</version>
 		</dependency>
 		
 		<!-- Auth0 -->
