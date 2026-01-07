@@ -1,5 +1,6 @@
 package it.eng.dome.payment.scheduler.service;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -89,7 +90,7 @@ public class StartPayment {
 	
 	private String decode(String s) {
 		byte[] decodedBytes = Base64.getDecoder().decode(s);
-        return new String(decodedBytes);
+        return new String(decodedBytes, StandardCharsets.UTF_8);
 	}
 	
 	protected EGPaymentResponse byPassGateway(List<PaymentItem> payments) {

@@ -1,7 +1,7 @@
 package it.eng.dome.payment.scheduler.controller;
 
 import java.time.OffsetDateTime;
-import java.util.Arrays;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
+
 import it.eng.dome.payment.scheduler.service.PaymentService;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
-import it.eng.dome.tmforum.tmf678.v4.JSON;
-import it.eng.dome.tmforum.tmf678.v4.model.AppliedCustomerBillingRate;
+import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 
 @RestController
 @RequestMapping("/payment")
@@ -27,14 +27,14 @@ public class PaymentSchedulerController {
 	@Autowired
 	protected PaymentService paymentService;
 
+	
 	@RequestMapping(value = "/pay", method = RequestMethod.POST, produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<String> pay(@RequestBody String applied) throws Throwable {
-		logger.info("Received request with appliedCustomerBillingRates");
+	public ResponseEntity<String> pay(@RequestBody List<CustomerBill> cbs) throws Throwable {
+		logger.info("Received request with CustomerBills");
 
-		AppliedCustomerBillingRate[] appliedCustomerBillingRates = JSON.getGson().fromJson(applied,	AppliedCustomerBillingRate[].class);
-		logger.info("Number of AppliedCustomerBillingRates received: {}", appliedCustomerBillingRates.length);
+		logger.info("Number of CustomerBills received: {}", cbs.size());
 
-		String response = paymentService.payments(Arrays.asList(appliedCustomerBillingRates));
+		String response = paymentService.payments(cbs);
 		return new ResponseEntity<String>(response, HttpStatus.OK);
 	}
 
