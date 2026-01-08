@@ -6,7 +6,7 @@
 **Improvements**
 * Usage of the `getChecksOnSelf` from `AbstractHealthService` of last version of `brokerage-utils`.
 * Usage of the `AbstractMarkdownGenerator` class to generate `REST_APIs.md`.
-* Updated code to manage payment of CustomerBill(s) with state NEW or  PARTIALLY_PAID
+* Updated code to manage payment of CustomerBill(s) with state `NEW` or `PARTIALLY_PAID`.
 
 ### <code>1.2.5</code> :calendar: 30/10/2025
 **Improvements**
