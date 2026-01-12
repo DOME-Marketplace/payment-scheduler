@@ -2,6 +2,10 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>2.0.1</code> :calendar: 12/01/2026
+**BugFixing**
+* Duplicate code removed
+
 ### <code>2.0.0</code> :calendar: 22/12/2025
 **Improvements**
 * Usage of the `getChecksOnSelf` from `AbstractHealthService` of last version of `brokerage-utils`.
