@@ -70,7 +70,7 @@ public class PaymentService {
 	        100                                       		// pageSize
 		).toList(); 
 		
-		payments(cbList);
+		//payments(cbList);
 		return payments(cbList);
 	}
 	

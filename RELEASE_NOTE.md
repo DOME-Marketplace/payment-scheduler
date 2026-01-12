@@ -2,11 +2,15 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>2.0.1</code> :calendar: 12/01/2026
+**BugFixing**
+* Duplicate code removed
+
 ### <code>2.0.0</code> :calendar: 22/12/2025
 **Improvements**
 * Usage of the `getChecksOnSelf` from `AbstractHealthService` of last version of `brokerage-utils`.
 * Usage of the `AbstractMarkdownGenerator` class to generate `REST_APIs.md`.
-* Updated code to manage payment of CustomerBill(s) with state NEW or  PARTIALLY_PAID
+* Updated code to manage payment of CustomerBill(s) with state `NEW` or `PARTIALLY_PAID`.
 
 ### <code>1.2.5</code> :calendar: 30/10/2025
 **Improvements**
