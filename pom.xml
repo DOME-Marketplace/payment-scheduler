@@ -13,7 +13,7 @@
 		
 	<groupId>it.eng.dome.payment</groupId>
 	<artifactId>scheduler</artifactId>
-	<version>2.0.1</version>
+	<version>2.0.2</version>
 	<name>Payment Scheduler</name>
 	<description>Payment Scheduler for DOME project</description>
 	
@@ -59,7 +59,7 @@
 		<dependency>
 			<groupId>it.eng.dome.brokerage</groupId>
 			<artifactId>brokerage-utils</artifactId>
-			<version>2.2.7</version>
+			<version>2.2.8</version>
 		</dependency>
 			
 		<!-- TMF678 Customer Bill -->
