@@ -2,6 +2,11 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>2.0.2</code> :calendar: 19/02/2026
+**BugFixing**
+* Improved filtering of CustomerBill(s) by StateValue (NEW or PARTIALLY_PAID)
+* Usage of the new `Brokerage Utils` version: `2.2.8`.
+
 ### <code>2.0.1</code> :calendar: 12/01/2026
 **BugFixing**
 * Duplicate code removed

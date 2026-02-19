@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,17 +59,11 @@ public class PaymentService {
 	public String payments() {
 		logger.info("Starting payments at {}", OffsetDateTime.now().format(PaymentDateUtils.formatter));
 		
-		// add filter for CustomerBill(s) 
-		Map<String, String> filter = new HashMap<String, String>();
-		//filter.put("state", StateValue.NEW.getValue()); // state = new
-		filter.put("state", StateValue.NEW.getValue() + "," + StateValue.PARTIALLY_PAID.getValue());
-
-		List<CustomerBill> cbList = FetchUtils.streamAll(
-				customerBillApis::listCustomerBills,   // method reference
-	        null,                                     		// fields
-	        filter,               							// filter
-	        100                                       		// pageSize
-		).toList(); 
+		// get CustomerBill(s) with state NEW or PARTIALLY_PAID
+		List<CustomerBill> cbList = Stream.concat(
+		        fetchByState(StateValue.NEW).stream(),
+		        fetchByState(StateValue.PARTIALLY_PAID).stream()
+		).toList();
 		
 		//payments(cbList);
 		return payments(cbList);
@@ -294,5 +289,15 @@ public class PaymentService {
 			tmforumService.updateCustomerBillState(cbId, StateValue.PARTIALLY_PAID);
 		else
 			tmforumService.updateCustomerBillState(cbId, StateValue.NEW);
+	}
+	
+	private List<CustomerBill> fetchByState(StateValue state) {
+		logger.debug("Fetching CustomerBill(s) by state {}",state.getValue());
+	    Map<String, String> filter = Map.of("state", state.getValue()); 
+	    
+	    List<CustomerBill> filteredList=FetchUtils.streamAll(customerBillApis::listCustomerBills, null, filter, 100).toList();
+	    logger.debug("Number of retrieved CustomerBill(s): {}",filteredList.size());
+	    
+	    return filteredList;
 	}
 }
