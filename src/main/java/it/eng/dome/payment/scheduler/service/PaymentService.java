@@ -92,7 +92,7 @@ public class PaymentService {
 				if(productId==null || productId.isBlank()) {
 					logger.warn("Cannot found the Product ID associated to the CB: {}", cb.getId());
 					logger.warn("Product attribute is required to get the paymentPreAuthorizationExternal from ProductCharacteristic");
-					logger.warn("The CB {} cannot be payed skipped", cb.getId());
+					logger.warn("The CB {} cannot be paid - skipped", cb.getId());
 					noComplaintBills.add(cb.getId());
 					continue;
 				}

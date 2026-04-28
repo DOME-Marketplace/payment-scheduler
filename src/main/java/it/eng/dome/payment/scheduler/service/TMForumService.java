@@ -61,7 +61,7 @@ public class TMForumService {
 		update.setState(state);
 
 		customerBillApis.updateCustomerBill(cbId, update);
-		logger.debug("Updated CustomerBill with id: {} with state '{}' to the new state '{}'", cbId, state.getValue(), update.getState().getValue());
+		logger.debug("Updated CustomerBill with id: {} to the new state '{}'", cbId, state.getValue());
 	}
 
 	/**
@@ -171,7 +171,7 @@ public class TMForumService {
 				update.setState(StateValue.SETTLED);
 			
 			customerBillApis.updateCustomerBill(cb.getId(), update);
-			logger.debug("CB with id {} has been updated successful to state {}",update.getState().getValue());
+			logger.debug("CB with id {} has been updated successful to state {}",cb.getId(), update.getState().getValue());
 
 		}
 	}

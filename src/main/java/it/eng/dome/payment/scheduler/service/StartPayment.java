@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -17,7 +16,9 @@ import org.springframework.web.client.RestClient;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 
 import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
@@ -48,17 +49,15 @@ public class StartPayment {
 
 		logger.debug("Payment payload to send EG APIs: {}", payment.toJson());
 
-		HttpHeaders headers = new HttpHeaders();
-		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.set("Authorization", "Bearer " + token);
-		HttpEntity<String> request = new HttpEntity<>(payment.toJson(), headers);
-
 		try {
+			
 			JwtResponse response = restClient.post()
-				    .uri(url)
-				    .body(request)
-				    .retrieve()
-				    .body(JwtResponse.class);
+	                .uri(url)
+	                .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+	                .contentType(MediaType.APPLICATION_JSON)
+	                .body(payment.toJson())
+	                .retrieve()
+	                .body(JwtResponse.class);
 			
 			if (response.getResponseJwt() != null) {
 				String responseJwt = response.getResponseJwt();
@@ -66,11 +65,13 @@ public class StartPayment {
 				
 				// decode the response
 				DecodedJWT jwt = JWT.decode(responseJwt);
-				logger.debug("Payload Non-Interactive: {}", jwt.getPayload());
+				logger.debug("Payload Non-Interactive: {}",decode(jwt.getPayload()));
 				//logger.info("paymentExternalId: {}", jwt.getClaim("paymentExternalId").asString());
 				//logger.info("paymentPreAuthorizationExternalId: {}", jwt.getClaim("paymentPreAuthorizationExternalId").asString());
 				
-				ObjectMapper objectMapper = new ObjectMapper();
+				ObjectMapper objectMapper = JsonMapper.builder()
+				        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+				        .build();
 				return objectMapper.readValue(decode(jwt.getPayload()), EGPaymentResponse.class);
 	
 			} else {
