@@ -2,6 +2,10 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>2.0.4</code> :calendar: 22/07/2026
+**BugFixing**
+* Updated `handlePaymentStatus` method in `PaymentNotifyController` to fix bug
+
 ### <code>2.0.3</code> :calendar: 27/04/2026
 **BugFixing**
 * Updated restClient request to the Payment service
