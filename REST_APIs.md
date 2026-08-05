@@ -1,6 +1,6 @@
 # Payment Scheduler
 
-**Version:** 2.0.3  
+**Version:** 2.0.4  
 **Description:** Swagger REST APIs for the payment-scheduler software  
 
 

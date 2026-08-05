@@ -124,8 +124,10 @@ public class PaymentNotifyController {
 	    switch (status) {
 	        case SUCCEEDED:
 	            handleStatusSucceeded(cbIds, paymentExternalId);
+	            break;
 	        case FAILED:
 	            handleStatusFailed(cbIds);
+	            break;
 	    }
 	    
 	}
