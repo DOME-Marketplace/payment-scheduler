@@ -2,6 +2,12 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>2.0.5</code> :calendar: 05/10/2026
+**BugFixing**
+* Add `PaymentException` class
+* retrieve clientId from `credentialSubject->mandate->mandatee` instead of `sub` atrtibute
+
+
 ### <code>2.0.4</code> :calendar: 22/07/2026
 **BugFixing**
 * Updated `handlePaymentStatus` method in `PaymentNotifyController` to fix bug

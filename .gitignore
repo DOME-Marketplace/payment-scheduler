@@ -17,6 +17,6 @@ tmp/
 *.bak
 *.swp
 *~.nib
-/.private-key
-/.lear-credential-machine
+/.private-key*
+/.lear-credential-machine*
 /src/main/resources/application.yml

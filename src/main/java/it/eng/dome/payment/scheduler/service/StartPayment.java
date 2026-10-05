@@ -59,33 +59,33 @@ public class StartPayment {
 	                .retrieve()
 	                .body(JwtResponse.class);
 			
-			if (response.getResponseJwt() != null) {
-				String responseJwt = response.getResponseJwt();
-				logger.debug("ResponseJwt: {}", responseJwt);
-				
-				// decode the response
-				DecodedJWT jwt = JWT.decode(responseJwt);
-				logger.debug("Payload Non-Interactive: {}",decode(jwt.getPayload()));
-				//logger.info("paymentExternalId: {}", jwt.getClaim("paymentExternalId").asString());
-				//logger.info("paymentPreAuthorizationExternalId: {}", jwt.getClaim("paymentPreAuthorizationExternalId").asString());
-				
-				ObjectMapper objectMapper = JsonMapper.builder()
-				        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-				        .build();
-				return objectMapper.readValue(decode(jwt.getPayload()), EGPaymentResponse.class);
-	
-			} else {
-				logger.error("Error in ResponseJwt: {}", response.getError().toJson());
-				return null;
-				// TODO - remove byPassGateway and return null
-				//return byPassGateway(payment.getBaseAttributes().getPaymentItems());
+			if (response == null) {
+				throw new RuntimeException("JwtResponse is null");
 			}
+			
+			if (response.getResponseJwt() == null) {
+				throw new RuntimeException("ResponseJwt is null. Error response: " + response.getError().toJson());
+			}
+			
+			String responseJwt = response.getResponseJwt();
+			logger.debug("ResponseJwt: {}", responseJwt);
+			
+			// decode the response
+			DecodedJWT jwt = JWT.decode(responseJwt);
+			logger.debug("Payload Non-Interactive: {}", decode(jwt.getPayload()));
+			//logger.info("paymentExternalId: {}", jwt.getClaim("paymentExternalId").asString());
+			//logger.info("paymentPreAuthorizationExternalId: {}", jwt.getClaim("paymentPreAuthorizationExternalId").asString());
+			
+			ObjectMapper objectMapper = JsonMapper.builder()
+			        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+			        .build();
+			
+			return objectMapper.readValue(decode(jwt.getPayload()), EGPaymentResponse.class);
+
 				
 		}catch(Exception e) {
-			logger.error("Error: {}", e.getMessage());
-			return null;
-			// TODO - remove byPassGateway and return null
-			//return byPassGateway(payment.getBaseAttributes().getPaymentItems());
+			logger.error("Error executing non-interactive payment", e);
+			throw new RuntimeException("Error executing non-interactive payment", e);
 		}
 	}
 	

@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpClientErrorException;
 
 import it.eng.dome.brokerage.api.AppliedCustomerBillRateApis;
 import it.eng.dome.brokerage.api.CustomerBillApis;
@@ -22,10 +23,12 @@ import it.eng.dome.brokerage.api.ProductInventoryApis;
 import it.eng.dome.brokerage.api.fetch.FetchUtils;
 import it.eng.dome.payment.scheduler.dto.PaymentItem;
 import it.eng.dome.payment.scheduler.dto.PaymentStartNonInteractive;
+import it.eng.dome.payment.scheduler.exception.PaymentException;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse;
 import it.eng.dome.payment.scheduler.model.EGPaymentResponse.Payout;
 import it.eng.dome.payment.scheduler.util.PaymentDateUtils;
 import it.eng.dome.payment.scheduler.util.PaymentStartNonInteractiveUtils;
+import it.eng.dome.tmforum.tmf678.v4.ApiException;
 import it.eng.dome.tmforum.tmf678.v4.model.CustomerBill;
 import it.eng.dome.tmforum.tmf678.v4.model.StateValue;
 import jakarta.validation.constraints.NotNull;
@@ -201,44 +204,46 @@ public class PaymentService {
 	 */
 	private boolean executePayment(PaymentStartNonInteractive paymentStartNonInteractive, List<CustomerBill> cbs){
 		
-		String token = vcverifier.getVCVerifierToken();
-		if (token != null) {
+		try {		
+			String token = vcverifier.getVCVerifierToken();
+
+			// Update State of CBs to "sent"
+			tmforumService.updateCustomerBillsState(cbs, StateValue.SENT);
+			EGPaymentResponse egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
+
+			String paymentExternalId=egpayment.getPaymentExternalId();
+			//logger.debug("PaymentExternalId: {}", paymentExternalId);
 			
-			try {
-				// Update State of CBs to "sent"
-				tmforumService.updateCustomerBillsState(cbs, StateValue.SENT);
-				EGPaymentResponse egpayment = payment.paymentNonInteractive(token, paymentStartNonInteractive);
-				   
-				if (egpayment != null) {
-					
-					String paymentExternalId=egpayment.getPaymentExternalId();
-					//logger.debug("PaymentExternalId: {}", paymentExternalId);
-					
-					List<Payout> payoutList = egpayment.getPayoutList();
-					//Map<String, CustomerBill> cbMap = cbs.stream().collect(Collectors.toMap(CustomerBill::getId, Function.identity()));
-					
-					logger.debug("Updating {} CB in the PayoutList for payment transaction with id {}", payoutList.size(), paymentExternalId);
-					
-					for (Payout payout : payoutList) {
-						handlePaymentPayout(payout, paymentExternalId);
-					}
-					
-					return true;
-				}else {
-					List<String> customerBillIds = cbs.stream()
-	        		        .map(CustomerBill::getId)
-	        		        .collect(Collectors.toList());
-					logger.error("Error: EG Payment Gateway couldn't pay the CustomerBill: {}", customerBillIds.stream().collect(Collectors.joining(",")));
-					tmforumService.restoreCustomerBillsState(customerBillIds);
-					return false;
-				}
-			}catch (it.eng.dome.tmforum.tmf678.v4.ApiException e){
-				logger.error("Error executing payment: {}",e.getMessage());
-				return false;
+			List<Payout> payoutList = egpayment.getPayoutList();
+			//Map<String, CustomerBill> cbMap = cbs.stream().collect(Collectors.toMap(CustomerBill::getId, Function.identity()));
+			
+			logger.debug("Updating {} CB in the PayoutList for payment transaction with id {}", payoutList.size(), paymentExternalId);
+			
+			for (Payout payout : payoutList) {
+				handlePaymentPayout(payout, paymentExternalId);
 			}
 			
-		} else {
-			logger.error("Error to get the Token from VC Verfier Server");
+			return true;
+	
+		} catch (HttpClientErrorException e) {
+			logger.error("Error retrieving token from VC Verifier. Status={}", e.getStatusCode(), e);
+			return false;
+		} catch (PaymentException e) {
+			logger.error("Error calling EG Payment Gateway", e);
+			List<String> customerBillIds = cbs.stream()
+		        .map(CustomerBill::getId)
+		        .collect(Collectors.toList());
+	
+			logger.error("Error: EG Payment Gateway couldn't pay the CustomerBill: {}", customerBillIds.stream().collect(Collectors.joining(",")));
+			
+			try {
+				tmforumService.restoreCustomerBillsState(customerBillIds);
+			} catch (ApiException e1) {
+				logger.error("Error restoring CustomerBills state", e1);
+			}
+			return false;			
+		} catch (ApiException e){
+			logger.error("Error executing payment: {}", e.getMessage());
 			return false;
 		}
 	}
