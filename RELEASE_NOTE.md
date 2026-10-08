@@ -2,10 +2,14 @@
 
 **Release Notes** of the *Payment Scheduler* software:
 
+### <code>2.0.6</code> :calendar: 08/10/2026
+**Improvements**
+* Manage different clienId in the lear-credential JSON payload (both `credentialSubject->mandate->mandatee` and `sub` attribute)
+
 ### <code>2.0.5</code> :calendar: 05/10/2026
 **BugFixing**
 * Add `PaymentException` class
-* retrieve clientId from `credentialSubject->mandate->mandatee` instead of `sub` atrtibute
+* Retrieve clientId from `credentialSubject->mandate->mandatee` instead of `sub` attribute
 
 
 ### <code>2.0.4</code> :calendar: 22/07/2026
