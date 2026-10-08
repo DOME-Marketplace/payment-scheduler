@@ -71,9 +71,7 @@ public class M2MTokenService {
 		return map;
 	}
 
-	@SuppressWarnings("unchecked")
 	public String createClientAssertion(String learCredential) {
-
 		String jwtCredential = getVCinJWTDecodedFromBase64(learCredential);
 		// logger.info("JwtCredential: {}", jwtCredential);
 
@@ -81,12 +79,7 @@ public class M2MTokenService {
 			SignedJWT signedJWT = SignedJWT.parse(jwtCredential);
 			Payload vcMachinePayload = signedJWT.getPayload();
 
-			Map<String, Object> credentialSubject = (Map<String, Object>) vcMachinePayload.toJSONObject().get("credentialSubject");
-			Map<String, Object> mandate = (Map<String, Object>) credentialSubject.get("mandate");
-			Map<String, Object> mandatee = (Map<String, Object>) mandate.get("mandatee");
-			clientId = (String) mandatee.get("id");
-
-			// clientId = (String) vcMachinePayload.toJSONObject().get("sub");
+			clientId = getClientId(vcMachinePayload);
 			logger.info("Get clientId: {}", clientId);
 
 			Instant issueTime = Instant.now();
@@ -112,6 +105,24 @@ public class M2MTokenService {
 			logger.error("Error: {}", e.getMessage());
 			return null;
 		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private String getClientId(Payload vcMachinePayload) {
+		
+		Map<String, Object> payload = vcMachinePayload.toJSONObject();
+		
+		if (payload.containsKey("credentialSubject")) {			
+			Map<String, Object> credentialSubject = (Map<String, Object>) payload.get("credentialSubject");
+			Map<String, Object> mandate = (Map<String, Object>) credentialSubject.get("mandate");
+			Map<String, Object> mandatee = (Map<String, Object>) mandate.get("mandatee");
+			
+			logger.debug("Getting clientId from 'credentialSubject.mandate.mandatee.id' attribute");
+		    return (String) mandatee.get("id");
+		}
+	
+		logger.debug("Getting clientId from 'sub' attribute");
+		return (String) payload.get("sub");
 	}
 
 	private String createVPTokenJWT(String jwtCredential, String clientId, long iat, long exp) throws Exception {
